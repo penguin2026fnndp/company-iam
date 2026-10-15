@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="FExc206WynykMpeLmLnxW4">
+<head data-page-node-id="fYcgwBBiDgphYXVFAircgx">
+<meta charset="UTF-8" data-page-node-id="DXqle46LP2iPI5oDS1SQUw">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="pyHOZ0DbBbSZUmHzDFlt3g">
+<title>统一权限管理系统（IAM）需求规格说明书 · 骨架版 v0.3</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#ffffff; --ink:#1f1f1e; --ink2:#5f5e5a; --ink3:#8a8880;
+    --line:#e6e4de; --line2:#d3d1c7;
+    --blue:#185fa5; --blue-bg:#e6f1fb; --blue-ink:#0c447c;
+    --teal:#0f6e56; --teal-bg:#e1f5ee;
+    --purple:#534ab7; --purple-bg:#eeedfe;
+    --amber:#854f0b; --amber-bg:#faeeda;
+    --red:#a32d2d; --red-bg:#fcebeb;
+    --gray-bg:#f1efe8;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15px; line-height:1.75; -webkit-font-smoothing:antialiased;
+  }
+  .layout{display:flex; align-items:flex-start; max-width:1240px; margin:0 auto; gap:32px; padding:32px 24px 80px;}
+  nav.toc{
+    position:sticky; top:32px; flex:0 0 236px; width:236px;
+    background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 14px;
+    font-size:13px; max-height:calc(100vh - 64px); overflow-y:auto;
+  }
+  nav.toc h4{margin:0 0 10px; font-size:12px; font-weight:500; color:var(--ink3); letter-spacing:.06em;}
+  nav.toc a{display:block; padding:5px 8px; color:var(--ink2); text-decoration:none; border-radius:6px; line-height:1.5;}
+  nav.toc a:hover{background:var(--gray-bg); color:var(--ink);}
+  nav.toc a.sub{padding-left:20px; color:var(--ink3); font-size:12.5px;}
+  main{flex:1 1 auto; min-width:0;}
+
+  header.doc{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:32px 36px; margin-bottom:20px;
+  }
+  header.doc .eyebrow{font-size:12.5px; color:var(--blue); font-weight:500; letter-spacing:.04em;}
+  header.doc h1{margin:8px 0 10px; font-size:26px; font-weight:500; letter-spacing:-.01em;}
+  header.doc p.lead{margin:0 0 18px; color:var(--ink2); font-size:14.5px;}
+  .meta{display:flex; flex-wrap:wrap; gap:10px;}
+  .meta span{
+    font-size:12.5px; color:var(--ink2); background:var(--gray-bg);
+    border:1px solid var(--line); border-radius:999px; padding:3px 12px;
+  }
+
+  section{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:28px 36px; margin-bottom:20px;
+  }
+  h2{
+    font-size:19px; font-weight:500; margin:0 0 6px; padding-bottom:12px;
+    border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:10px;
+  }
+  h2 .no{font-size:13px; color:var(--blue); font-weight:500; letter-spacing:.04em;}
+  h3{font-size:15.5px; font-weight:500; margin:26px 0 8px; color:var(--ink);}
+  h3:first-of-type{margin-top:18px;}
+  h4{font-size:14px; font-weight:500; margin:18px 0 6px; color:var(--ink2);}
+  p{margin:8px 0;}
+  ul,ol{margin:8px 0; padding-left:22px;}
+  li{margin:4px 0;}
+  code{
+    font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px;
+    background:var(--gray-bg); padding:1px 6px; border-radius:4px; color:#3c3489;
+  }
+
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px;}
+  th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{background:var(--gray-bg); font-weight:500; color:var(--ink2); font-size:12.5px; white-space:nowrap;}
+  tbody tr:hover{background:#fbfbf9;}
+  td code{font-size:12px;}
+  .tbl-wrap{overflow-x:auto;}
+
+  .tag{display:inline-block; font-size:11.5px; font-weight:500; padding:1px 8px; border-radius:999px; white-space:nowrap;}
+  .tag.blue{background:var(--blue-bg); color:var(--blue-ink);}
+  .tag.teal{background:var(--teal-bg); color:var(--teal);}
+  .tag.purple{background:var(--purple-bg); color:var(--purple);}
+  .tag.amber{background:var(--amber-bg); color:var(--amber);}
+  .tag.red{background:var(--red-bg); color:var(--red);}
+
+  .box{border:1px solid var(--line2); border-left-width:3px; border-radius:8px; padding:14px 18px; margin:14px 0; background:#fbfbf9; font-size:14px;}
+  .box.rec{border-left-color:var(--blue); background:var(--blue-bg); border-color:#b5d4f4;}
+  .box.risk{border-left-color:var(--red); background:var(--red-bg); border-color:#f7c1c1;}
+  .box.decide{border-left-color:var(--amber); background:var(--amber-bg); border-color:#fac775;}
+  .box b{font-weight:500;}
+  .box .lbl{display:block; font-size:12.5px; font-weight:500; margin-bottom:4px; letter-spacing:.02em;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .card{border:1px solid var(--line); border-radius:12px; padding:16px 18px; background:#fdfdfc;}
+  .card h4{margin:0 0 6px; font-size:14px; color:var(--ink); font-weight:500;}
+  .card p{margin:0; font-size:13.5px; color:var(--ink2);}
+
+  .flow{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:14px 0; font-size:13px;}
+  .flow .step{background:var(--blue-bg); color:var(--blue-ink); border:1px solid #b5d4f4; border-radius:8px; padding:7px 13px;}
+  .flow .step.alt{background:var(--purple-bg); color:var(--purple); border-color:#cecbf6;}
+  .flow .arw{color:var(--ink3); font-size:14px;}
+
+  .todo-list{list-style:none; padding-left:0;}
+  .todo-list li{padding:10px 14px; border:1px solid var(--line); border-radius:8px; margin:8px 0; background:#fdfdfc; font-size:13.5px;}
+  .todo-list li .q{font-weight:500; display:block; margin-bottom:2px;}
+  .todo-list li .w{color:var(--ink2);}
+
+  footer{color:var(--ink3); font-size:12.5px; text-align:center; padding:20px 0 0;}
+
+  @media (max-width:920px){
+    .layout{flex-direction:column; padding:20px 16px 60px;}
+    nav.toc{position:static; width:100%; flex:none; max-height:none;}
+    .grid2{grid-template-columns:1fr;}
+    section,header.doc{padding:22px 20px;}
+  }
+  @media print{
+    body{background:#fff; font-size:11.5pt;}
+    nav.toc{display:none;}
+    .layout{display:block; max-width:none; padding:0;}
+    section,header.doc{border:none; border-radius:0; padding:0 0 18px; margin-bottom:14px; break-inside:avoid;}
+    h2{break-after:avoid;}
+    table{break-inside:auto;}
+    tr{break-inside:avoid;}
+    .box{break-inside:avoid;}
+  }
+</style>
+</head>
+<body data-page-node-id="TV3AJRmzBL1jJZhA0QWbaq">
+<div class="layout" data-page-node-id="sYjOsmUrTOX7UBjbGf22Da">
+
+<nav class="toc" data-page-node-id="Uz30bHTe2k2vg1bZ6pBnAn">
+  <h4 data-page-node-id="DNbS0eAhixaSp5XH1xYfPt">目录</h4>
+  <a href="#s1" data-page-node-id="uq0YYN1VqHDnPRGpp9kKmD">1 概述</a>
+  <a href="#s2" data-page-node-id="XwdQtXAKBgsXuDo0l21ZWH">2 术语与角色</a>
+  <a href="#s3" data-page-node-id="fbUi1JAGqInZ0TId1Z9q6y">3 总体业务模型</a>
+  <a href="#s4" data-page-node-id="MBXJBd8G9bkGSDAe9IDaEU">4 功能需求</a>
+  <a href="#s4-1" class="sub" data-page-node-id="QFMsnm44mNsrHVpXDn9U6E">4.1 账号管理</a>
+  <a href="#s4-2" class="sub" data-page-node-id="fQGg5zYrjWOKTQHe9OQn5j">4.2 组织与岗位</a>
+  <a href="#s4-3" class="sub" data-page-node-id="5CEQMmpcex7jLAFJ3VTI6M">4.3 系统档案管理</a>
+  <a href="#s4-4" class="sub" data-page-node-id="twt1zOT7ELhjCfCYrIskhm">4.4 认证与单点登录</a>
+  <a href="#s4-5" class="sub" data-page-node-id="KtBaXz0BQ1FOPFk9iqxDiy">4.5 角色与权限</a>
+  <a href="#s4-6" class="sub" data-page-node-id="oRlBOezVxdc4lzJlU3Epvw">4.6 授权申请与审批</a>
+  <a href="#s4-7" class="sub" data-page-node-id="ttIsE9MhAq5mnevh1lcT59">4.7 审计与日志</a>
+  <a href="#s4-8" class="sub" data-page-node-id="MFdOw53Wim9cHJcO3NxtmM">4.8 自身权限管理</a>
+  <a href="#s5" data-page-node-id="rExwsYsUOdopf9qfJp2kqw">5 权限判定规则</a>
+  <a href="#s6" data-page-node-id="V2Isx3V4UMhRwmqGmvW8Zi">6 数据模型</a>
+  <a href="#s7" data-page-node-id="eyTC9MfF2HcAaGX4jdk4Lt">7 非功能需求</a>
+  <a href="#s8" data-page-node-id="O9i26iJV29Dkz9FhRBup1E">8 风险与已知取舍</a>
+  <a href="#s9" data-page-node-id="UjhtWYLc2nT2FHRTHRnS5b">9 待确认清单</a>
+  <a href="#s10" data-page-node-id="cViMwxtebtPfrYW3L1XShi">10 变更记录</a>
+</nav>
+
+<main data-page-node-id="eIofEtxioD52Am5xIdsm2F">
+
+<header class="doc" data-page-node-id="FX4W8FHAEQGavvONALQH3Z">
+  <div class="eyebrow" data-page-node-id="vhQVZFDlPw2Pmbdt2iMqeP">需求规格说明书 · 骨架版</div>
+  <h1 data-page-node-id="XQEE9otiZVYHyA9Yp7XHXJ">统一权限管理系统（IAM）</h1>
+  <p class="lead" data-page-node-id="H1rJnQDM7pJeBJD4tuWNVl">面向全公司 1 万+ 员工的集中式身份与权限管理平台：一个公司账号通行全部业务系统，以岗位驱动的 RBAC 模型集中管理 20+ 系统的功能级权限，申请审批嵌入 OA 流程，系统自身按三权分立治理。</p>
+  <div class="meta" data-page-node-id="HRgChwgLJSRCV7ewZNUWyU">
+    <span data-page-node-id="Fg3AozKYek7OpX13gGfn8Z">版本 v0.3（骨架）</span>
+    <span data-page-node-id="QOj9mmnQsDVE35NCAMEU3w">阶段：需求分析</span>
+    <span data-page-node-id="kufshOqUxi16dhGpJtBj3E">状态：待补充</span>
+    <span data-page-node-id="HeF2OiEeXpB3jsytOYJbUr">更新日期：2026-10-15</span>
+  </div>
+</header>
+
+<section id="s1" data-page-node-id="SKfVHirDOtsakh6YTqAQwr">
+  <h2 data-page-node-id="sGQtDhB474s0CX7dDe9IQU"><span class="no" data-page-node-id="Rga1CPdDNIBfwnI3qxpReo">01</span>概述</h2>
+
+  <h3 data-page-node-id="sbueiPZOzwobebmiYkWg1U">1.1 建设背景</h3>
+  <p data-page-node-id="XqPZ18U4kPM7vU2Wu8NWIj">公司现有员工 1 万余人，业务系统 20 余个，各系统长期各自维护账号与权限，存在四类问题：账号分散、密码规则不一，员工记忆负担重；人员入职、转岗、离职时权限无法及时同步，遗留"幽灵账号"；权限授予无统一记录，审计时说不清谁为什么有什么权限；权限调整依赖人工逐系统操作，效率低且易错。</p>
+  <p data-page-node-id="lA06iU1G7LS04VENEdz1hz">本项目建设的统一权限管理系统（以下简称 IAM）作为公司唯一的身份与授权中心，统一承载账号、认证、授权、审计四项能力。</p>
+
+  <h3 data-page-node-id="uzchQR9KGVOBNczmMj3I37">1.2 建设目标</h3>
+  <ul data-page-node-id="izRdAXH78fbBsDdC3P7MNW">
+    <li data-page-node-id="DhdwePazvdwcRdWu3v42m2"><b data-page-node-id="w7EZt9UajS3c3OHCiRXljh">一个账号</b>：员工凭一个公司账号登录全部已接入系统，登录一次、全站通行。</li>
+    <li data-page-node-id="qPsMIYQBYDQnPYOrqooSNY"><b data-page-node-id="4Y37dbo4eYsiFhZVMgagzp">一处授权</b>：权限统一在 IAM 中按"岗位—角色—功能点"授予，各系统不再单独维护权限。</li>
+    <li data-page-node-id="620XervJTgui4IoZ8RalR8"><b data-page-node-id="DjDTZfUQsDRWVs4kGTp2GP">一条流程</b>：权限申请与审批走 OA（外部 OA 对接或使用内置审批），审批通过后由 IAM 自动生效。</li>
+    <li data-page-node-id="tG4RYivQ4EmmX71eJtV6XC"><b data-page-node-id="ISauxH3eZwpvUuolGtSkJO">一本明白账</b>：所有授权、变更、登录行为可查可追溯，满足审计与合规要求。</li>
+  </ul>
+
+  <h3 data-page-node-id="i27ws7FKi23vi3B24mdw2X">1.3 范围边界</h3>
+  <div class="tbl-wrap" data-page-node-id="BccHyD0efPlbQ0qYy4nQM8">
+  <table data-page-node-id="uMs4ifImFC5sJnZaGODJob">
+    <thead data-page-node-id="Z6XaFOdw0ENXsn6lpM4Rs9"><tr data-page-node-id="z5AZkHi0i5HGzQgU7cY4GL"><th data-page-node-id="kSjRtsErJMhe6BRnO6agmI">范围</th><th data-page-node-id="IH7EuNInAuzD4KbFea7gGY">内容</th><th data-page-node-id="KU1Dik6OQSPTXV7Hq0PbJy">说明</th></tr></thead>
+    <tbody data-page-node-id="mvWLeTlLcwxdLGC64sHm9C">
+      <tr data-page-node-id="FOCk6nwXxWILp91ekQM1dm"><td data-page-node-id="rizQUZL6huxbb1D797i2RW"><span class="tag teal" data-page-node-id="QkByBZy4M5AldWlYt2tGvT">范围内</span></td><td data-page-node-id="sRHDiKqjOC27d9DXf5zy51">IAM 系统本身的开发与交付</td><td data-page-node-id="QxswAV0xdTqcBldICEI8nR">账号、组织、认证、权限、审批、审计全部模块真实实现</td></tr>
+      <tr data-page-node-id="m2D0BVo5Hps86g1rZpKufz"><td data-page-node-id="SNV37z2QGYSczGJXldiI8E"><span class="tag teal" data-page-node-id="bJQ2Jz17ddfT0AXwSx8ZKk">范围内</span></td><td data-page-node-id="frIf9mZbaohqWAFHKB1fsn">20+ 业务系统的档案登记</td><td data-page-node-id="RySW7gSGTEIV5KSLjFuaFV">登记系统、模块、功能点清单，作为授权对象与权限目录</td></tr>
+      <tr data-page-node-id="r1lj54mJ1JCg1tz2xnE6jE"><td data-page-node-id="O0KHrvtzzH71eNKHTTWzIR"><span class="tag teal" data-page-node-id="ne95Xpzw7ClGrxdTlAWsvy">范围内</span></td><td data-page-node-id="02FpP6xa7FrHMuXKZLStQZ">与 OA 的集成接口</td><td data-page-node-id="0hnCuk0qLPaNcgFZnnHlbx">提供标准接口，支持申请单发起与审批结果回调</td></tr>
+      <tr data-page-node-id="qkubsHgHuMZmNkoywaA4zC"><td data-page-node-id="scHAQ26jZuwU9dlooYKNob"><span class="tag amber" data-page-node-id="gF8t1WBgX3Eipu4ABuOC3P">范围外</span></td><td data-page-node-id="99oILn3NP5Tp3sWJTsQTnX">业务系统自身改造与真实对接</td><td data-page-node-id="il3kSkhrHivSnfQgbZHHUQ">业务系统仅作登记，不实施代码改造、不做真实联调</td></tr>
+      <tr data-page-node-id="50JEt3LMZKKOHZvDZ8JEnf"><td data-page-node-id="KmvCfEA27UtvKE9Z4Qsspv"><span class="tag amber" data-page-node-id="8JrlMu79F6287sOtoBCw3I">范围外</span></td><td data-page-node-id="GH1ORpeIHb3EuNGlyIqlSB">OA 系统本身的建设</td><td data-page-node-id="AdZKBgszYQKdCbMzmE0zRy">OA 视为已存在，仅约定集成协议</td></tr>
+      <tr data-page-node-id="mtlu6Jcoe91g7tIyNCd1QQ"><td data-page-node-id="FB4ajnzB2vR3Om9h6cYcy3"><span class="tag amber" data-page-node-id="G7KWCNzXZM0n8bQGybXOyv">范围外</span></td><td data-page-node-id="EJ6Tj3749mA27DzdZpmEXB">考勤、门禁等硬件类身份场景</td><td data-page-node-id="u0uSBIMBRcHoqU5ReD6jJe">IAM 不承载考勤业务；考勤系统可作为接入方使用统一认证，其打卡峰值不计入 IAM 认证容量模型</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 data-page-node-id="6WoiULoxEtUw3HGCZcBjY0">1.4 建设原则</h3>
+  <ul data-page-node-id="zEq7XDabv12VyXgXjWGEdH">
+    <li data-page-node-id="YNlNkbCj8Ygo3VHLEAGrkB"><b data-page-node-id="zR4GUW2Ugcc4bfkxugznS8">单一事实来源</b>：人的信息以 HR 为准，权限的配置以 IAM 为准，二者不重复维护。</li>
+    <li data-page-node-id="dBSvc4Q1mKXEXdlizCL8MM"><b data-page-node-id="OdhtCggIbauXRV3jUS7E44">默认最小权限</b>：员工入职仅获得岗位基线权限，额外权限一律通过申请获得。</li>
+    <li data-page-node-id="1ijIR28Xl99koc6Y6LD0H3"><b data-page-node-id="uHXLMsSOMWVvkN3QH6m05l">职责分离</b>：授权的、配置的、审计的三类角色互相制约，无人可一手遮天。</li>
+    <li data-page-node-id="5m9spfA9b9dL9pW1TnJ4Jo"><b data-page-node-id="A7itFVjtUHMrhhYEUl9ocm">可审计</b>：任何权限变更必须留下"谁、何时、给谁、改了什么、依据什么"的完整记录。</li>
+  </ul>
+</section>
+
+<section id="s2" data-page-node-id="lsYvsx35pb4170l1dBTz8P">
+  <h2 data-page-node-id="u96wj7q4aMQtrHNGkjYYEp"><span class="no" data-page-node-id="akgERCXoWOspiRqJ7s64WM">02</span>术语与角色</h2>
+
+  <h3 data-page-node-id="eGbL5CEAKYT9punym6TkTV">2.1 术语表</h3>
+  <div class="tbl-wrap" data-page-node-id="uUYViu70o4zWtYxCOzDWZz">
+  <table data-page-node-id="qx8KTmdwsOoCUWlJqTNcko">
+    <thead data-page-node-id="PqArFr9CIh3CXTksTYEyZ4"><tr data-page-node-id="Jbwcgz7dQbsDTQYZf1gMO9"><th data-page-node-id="LGyj4SigAlsCmJ9ngCsSZq">术语</th><th data-page-node-id="NOB705mIcWjnb85igkDqI8">定义</th></tr></thead>
+    <tbody data-page-node-id="cNqJtF6hgKNrtgnNEWOefI">
+      <tr data-page-node-id="zNmsuPbAK8ioYXadCXI0Nw"><td data-page-node-id="ik70Ei5BNHD7YU4kSjG4FT"><b data-page-node-id="zHWLUdHsiS2jVCRCqFJKrr">员工账号</b></td><td data-page-node-id="kwQ7Ku2JzWEt5V85NEaEew">员工在 IAM 中的唯一身份标识，全公司唯一，不可自行修改用户名。</td></tr>
+      <tr data-page-node-id="WJFBeExOoFmcNmZFOhnWxP"><td data-page-node-id="RiVVRWi3DMB8UiHz4pKdBp"><b data-page-node-id="ScXGtVYbr3oDShnlJSFgv2">人员类型</b></td><td data-page-node-id="XaUXvIGqMJwn7DQO6KVeC9">内部员工 / 外包人员。内部员工由 HR 同步产生，外包人员由部门管理员录入，以标签区分。</td></tr>
+      <tr data-page-node-id="953EofCFXrhDRDtPk2GXWE"><td data-page-node-id="hhDf7AkPBHXfEXQ2shAmHv"><b data-page-node-id="feARR0o6WJf6W2oB3VYRbz">组织维度</b></td><td data-page-node-id="TEgps0prDPc64VaulQyEn8">分公司 → 部门 → 岗位，三级结构，来源为 HR 主数据。</td></tr>
+      <tr data-page-node-id="aNBeJf0Ammum3t1QtlVoYt"><td data-page-node-id="x002Z2OxCEayNaO8VHFacS"><b data-page-node-id="J7mWrkQNjzcGOi4krL9c9C">业务系统</b></td><td data-page-node-id="3BBeEUwi9VSYN6BDncz4ZP">被纳管的 20+ 应用系统，含系统、模块、功能点三级结构。</td></tr>
+      <tr data-page-node-id="tw3rskwI5v49h0A2AWo48H"><td data-page-node-id="PV1uGz3ky5OqFVhCa06KOX"><b data-page-node-id="Qm7pAxyL7bzPkas191xVu2">功能点</b></td><td data-page-node-id="6UoiD5HKVbZu8ZS4nKyKi7">权限的最小授权单元，如"报销单-审批""员工档案-查看"。</td></tr>
+      <tr data-page-node-id="Bql8Fs3Ql46vweTHiXQrpj"><td data-page-node-id="uPPMKWPqXqlhKdDQSvz9fX"><b data-page-node-id="vSABTwC4q4zVKbEwBCnS9Y">公司角色</b></td><td data-page-node-id="vv9zykn9Xh8Gdnl99PAE9f">全公司统一角色，与岗位对应，如"会计""销售主管"，一个角色包含跨系统的功能点集合。</td></tr>
+      <tr data-page-node-id="J36XZD3Vqur3UJVwoyBKEZ"><td data-page-node-id="nVYvVQotlSPR4J4H8vnUfn"><b data-page-node-id="BKhm8XqPeHvKGhAZ0156uZ">基线角色</b></td><td data-page-node-id="sBbmIpTFzeCMkcGPm4FH61">某岗位在全公司的默认权限全集。</td></tr>
+      <tr data-page-node-id="7kMp6PW4wCGl225dVbq2WV"><td data-page-node-id="9eCo3RYAjHNfKtO0iEhsBG"><b data-page-node-id="8WVyTBAZmGThBlyRd7RTUR">差量</b></td><td data-page-node-id="rzwnVRixTHQmCgugw4XKEa">某分公司在某岗位基线上增加或禁用的功能点，用于表达分公司间权限差异。</td></tr>
+      <tr data-page-node-id="O7Oldv9x2Og4GQkYKhPI6W"><td data-page-node-id="HZiKZHk6PWb8LrytB9Yi3J"><b data-page-node-id="RtnlGCSQ5w191xuy1mX7jw">例外授予</b></td><td data-page-node-id="CYOQ1S4GUcHdSvl4SBZysh">员工在岗位权限之外单独申请获得的权限，记录在用户维度。</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 data-page-node-id="8FikAoiWFPQoOtZ4pG1gAz">2.2 系统使用者与权限角色</h3>
+  <div class="tbl-wrap" data-page-node-id="wssYANKPTyO5akB3Jkn3RZ">
+  <table data-page-node-id="Zw8QvN9gn3URygRd8OjAwx">
+    <thead data-page-node-id="aS7GuF1OFQJv4XffJVaXZG"><tr data-page-node-id="LTwU0axAdfIqv7WvumKaZC"><th data-page-node-id="1z02yiHhO1QyQ2lB52JJXo">角色</th><th data-page-node-id="mzFbjaz9TIIHwEgYzTeY4F">职责</th><th data-page-node-id="EdDMPWshQHEstrDfuUpBRx">关键约束</th></tr></thead>
+    <tbody data-page-node-id="xDDCMUTwIVfY0Lac2thmMs">
+      <tr data-page-node-id="xSmAh01XIS7ndxZr16czIl"><td data-page-node-id="5bEdf7cpzZF0AMIwIFP0oO"><b data-page-node-id="66vwlbyUqiuxsuebwtJqkW">普通员工</b></td><td data-page-node-id="XXOln21SDGcs3oEZol7l6G">登录系统、使用已获权限、提交权限申请</td><td data-page-node-id="yLZb72N7cdRtT73AUByMUu">只能看到自己的权限与申请记录</td></tr>
+      <tr data-page-node-id="upsXYQnUvoP61FHXDIk0FH"><td data-page-node-id="23IN5U7IaPMAOpTUSURfs6"><b data-page-node-id="pUX8lEZYnjJZwnGbzJxzBL">部门负责人</b></td><td data-page-node-id="tKSTWawY3qBwXqsgYZCJve">审批本部门员工的权限申请</td><td data-page-node-id="puW1fw2nQJqbStPcNLlgSY">仅限本部门范围</td></tr>
+      <tr data-page-node-id="PnG9WwPatk1aR3NsHGWWJl"><td data-page-node-id="q2rrqFB4jGTFdmgg2eQ1kl"><b data-page-node-id="K9smUtB9ETH3pVhuuWwYb3">部门管理员</b></td><td data-page-node-id="nyyDH2psgsLQMUFqdYOwRg">录入与维护本部门外包人员账号</td><td data-page-node-id="FSELViDA4RCD5kDIFoUf30">须填写有效期；不得修改内部员工 HR 数据</td></tr>
+      <tr data-page-node-id="UrJ8P7h6qbfQbLme1Hod0w"><td data-page-node-id="OPy7NFyZBGNmooZY3gAjjj"><b data-page-node-id="dy46io066JMXQ5N71nIKgi">分公司管理员</b></td><td data-page-node-id="JG5jHzz3giSDV0WcggBz0Z">配置本分公司岗位差量、审批涉敏感权限申请</td><td data-page-node-id="3n9lNCrJKVvia6Rnaqzs8D">仅限本分公司；变更全量留痕；总部可冻结回滚</td></tr>
+      <tr data-page-node-id="jEcQaMlCUc6k6oWiNuIvbn"><td data-page-node-id="MZYclH56vuvBG4p4mhvg4U"><b data-page-node-id="JwEMFNvJQeb31NUgLEXwjs">系统管理员</b></td><td data-page-node-id="0RF1WG4rY6R9OZWvJO6MKh">维护系统档案、功能点目录、组织架构同步、系统参数</td><td data-page-node-id="5AlLUpu5e8RjLJuKYas4kr"><b data-page-node-id="lJMUVmKTVA5E8iHzyFm7IU">不参与任何权限授予</b></td></tr>
+      <tr data-page-node-id="2QvQBd3Dcs09GldRSmZmkv"><td data-page-node-id="lw6e90vs8hERe8bQLWCFsA"><b data-page-node-id="v4Fj72zDtAoSg7slee7u8u">安全管理员</b></td><td data-page-node-id="BiIZDsjve2WfYrYqUmHDgR">定义角色、绑定功能点、授予与回收权限、标记敏感系统</td><td data-page-node-id="DJpFp3iLmvq3VMQJ19npWf"><b data-page-node-id="9pQAg5ziF5ZenwakM3Fcac">不能查看或修改审计日志</b></td></tr>
+      <tr data-page-node-id="hyjXkkrA5YSjMvgJerAEUl"><td data-page-node-id="R2Lt3tz6gRky5OeXFS48oG"><b data-page-node-id="J4pEOPBSt6cOTGHGNn0oOJ">审计员</b></td><td data-page-node-id="oDwcTgskP74p4gBtecSbOz">查询日志、导出审计报表、发现异常操作</td><td data-page-node-id="p2lGFXCKbDqIz8efA4uf08"><b data-page-node-id="xG9frPnGkEDJH78N17pyyq">只读，无任何配置与授权权限</b></td></tr>
+      <tr data-page-node-id="6dlnkHb6aCzSUucABmE2y7"><td data-page-node-id="xyYJD4LKZc4j8r3EYdjBxx"><b data-page-node-id="xfdc4ozszk3rZrjt8IHBg8">系统对接方</b></td><td data-page-node-id="ClRH4bByVAwic3CPgnwXC7">外部系统通过标准接口调用认证与鉴权服务</td><td data-page-node-id="GDP7pHEO65hAHOicFwwDhG">接口级鉴权，仅返回必要字段</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="box rec" data-page-node-id="tB6prZXVrSnhEnhZgmryS1"><span class="lbl" data-page-node-id="eqJ3wtnqAOWdf81PCa0YCA">关键设计</span>系统管理员、安全管理员、审计员三者互不兼任，<b data-page-node-id="zCtdcVSuIhLbpc0cjMEPJi">不设超级管理员</b>。任何单一账号都无法同时完成"授予权限"和"清除记录"两件事。</div>
+</section>
+
+<section id="s3" data-page-node-id="Fac5n0wtZZ76EIYHcbKwsZ">
+  <h2 data-page-node-id="bIGNAwasqTfwWLcTY9aUPr"><span class="no" data-page-node-id="oKfaQHXsMD4EV1vnB3Nrvp">03</span>总体业务模型</h2>
+
+  <h3 data-page-node-id="kDfrIjyacAU8IZGXmH1OE4">3.1 权限模型总览</h3>
+  <p data-page-node-id="HlzK0CRp1DSBOAuer2v9DY">采用以岗位为核心驱动的 RBAC 模型，权限沿"人 → 角色 → 功能点"传递，组织维度作为作用域与差异来源。</p>
+  <div class="flow" data-page-node-id="NIfocGD4tqveg4UrXfF4Ce">
+    <span class="step" data-page-node-id="ToncDmBTQWYWLQg3rmhFPd">员工</span><span class="arw" data-page-node-id="lSrIIFV0UrQXSQ2EklMX5w">→</span>
+    <span class="step" data-page-node-id="hDaGnhk8r0pv8APRXCU5bu">公司角色（≈岗位）</span><span class="arw" data-page-node-id="eJaUAao3PLAy7TPl8RDKbZ">→</span>
+    <span class="step" data-page-node-id="F6RT6VcoCviATKe9p0SxJF">功能点集合</span><span class="arw" data-page-node-id="WAK0L1Ihw83DfEbwcuJaEP">→</span>
+    <span class="step" data-page-node-id="tcGmEMwJHKv42RAVcUCubM">业务系统</span>
+  </div>
+  <div class="flow" data-page-node-id="BdBzzAUmaqXvFd9cCEx0HG">
+    <span class="step alt" data-page-node-id="lhBHvWRmxPL95DCKB6C03L">分公司</span><span class="arw" data-page-node-id="8KtVCNmSqNMhqTQ0vun6e9">→</span>
+    <span class="step alt" data-page-node-id="Q8BkoAFgAjfBVP8XM3nKFu">岗位差量（增 / 禁）</span><span class="arw" data-page-node-id="t3U7xBr2x3YtSi3IjZBdGP">→</span>
+    <span class="step alt" data-page-node-id="3ymBLBwTHx048FGUooTs6Q">叠加到基线</span>
+  </div>
+  <ul data-page-node-id="GnKx2v5hTrkPWtEXhVEfnL">
+    <li data-page-node-id="ClDmIHT5HV6sA0NWnDugFA">一个员工可拥有多个角色（身兼数职），最终权限为各角色权限并集。</li>
+    <li data-page-node-id="pnIVD1Oy1ITxgsRXcNyfCA">角色内权限按业务系统分段维护，互不干扰。</li>
+    <li data-page-node-id="rEyg2jF3Ff9oowDsUIHT0i">分公司差异以"基线 + 差量"表达，避免为每个分公司复制整套角色。</li>
+  </ul>
+
+  <h3 data-page-node-id="7PBCfhvqHTiQ5gc8nxdH20">3.2 典型业务闭环</h3>
+  <div class="tbl-wrap" data-page-node-id="z20bqDdOhADFCjVHELbFit">
+  <table data-page-node-id="UsPvV0t3h5RGuUEHOciG33">
+    <thead data-page-node-id="4nLHE99lJBWry6Kc9x5G6Y"><tr data-page-node-id="Bt517YF8NawMqaAknONyVE"><th data-page-node-id="Y4qOskZF03tdPuL6BAagCE">场景</th><th data-page-node-id="boKrfJCeLqNYUA6T10E7HC">触发</th><th data-page-node-id="a5gp82UCjdbEXqzX4NQRKc">系统处理</th><th data-page-node-id="m2rIXrCa6oLOCFnbeBSBvE">结果</th></tr></thead>
+    <tbody data-page-node-id="SHOH19XqKyH8aeEjAKbKBm">
+      <tr data-page-node-id="DzHIWMvbrb2XLSCeU6sqrn"><td data-page-node-id="hb7y0txGGi3d0umm05AKeH">新员工入职</td><td data-page-node-id="uF8pKGy9w0eCREcxONx93o">HR 登记员工信息</td><td data-page-node-id="CuxDN4Ry9ty6QJK5zeHLxT">同步生成账号 → 按部门与岗位自动授予基线角色 → 叠加分公司差量</td><td data-page-node-id="AATPKBH3jRBpsxFVslN2Fg">员工可直接登录并使用岗位权限</td></tr>
+      <tr data-page-node-id="EKoN1tUH9w3DZHoVCieY2K"><td data-page-node-id="SfTYakmumb2sjsUHlpgMaN">员工转岗</td><td data-page-node-id="0vy26GGRr5WRHHKDTS6CUC">HR 变更部门 / 岗位</td><td data-page-node-id="hZUxsRBXy0NHwJ0ZoZb8xJ">回收旧基线角色 → 授予新基线角色 → 踢出已有会话</td><td data-page-node-id="IHBCKXCKsAyVTXCBhlV8rE">权限即时与新岗位一致</td></tr>
+      <tr data-page-node-id="3Bj1gTWSJSSwRF9nkPqrgI"><td data-page-node-id="HJBKATA2nZSnE1sglT4ABa">员工离职</td><td data-page-node-id="j03wHU6c12Uri7NmctJdCh">HR 办理离职</td><td data-page-node-id="r3q10fAO1G0JYY7roxrcVt">账号停用 → 会话失效 → 权限全部回收</td><td data-page-node-id="BMHjACYLjIBQFanbD4EFKp">无法再登录任何系统</td></tr>
+      <tr data-page-node-id="nHOmGseuA6HzfJLncrrg55"><td data-page-node-id="SeQ3G4md8dn108UjagRwLu">外包人员进场</td><td data-page-node-id="rvYP0rLKgcF5KT41sxBKWc">部门管理员录入</td><td data-page-node-id="xb3BN9GV19tAnQQsWS6fDM">生成带"外部人员"标签的账号，必填有效期</td><td data-page-node-id="LbktUVlpWgu6Mop9kCy0gk">有效期内可登录，到期自动停用</td></tr>
+      <tr data-page-node-id="ORGGC5fiCeEdBL5X4z0MHg"><td data-page-node-id="BgxHBHhuH1IImuhJSjKdO2">申请额外权限</td><td data-page-node-id="hGhVJHul1cUHN5VJa1RCia">员工在 OA 提交申请</td><td data-page-node-id="fRHktQFk02gnLub8oQZDaU">按敏感度分级审批 → 通过后写入例外授予 → 事件留痕</td><td data-page-node-id="uhAoP7C8xf2wOFkNo7TEpK">获得权限，永久有效（不设有效期）</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="s4" data-page-node-id="1gnQwhJqJ3og6NE3wAVZAM">
+  <h2 data-page-node-id="PZe0qzRljAXdnsbBhZDQpz"><span class="no" data-page-node-id="90y2JI0Ci0jkLQE3aZhG66">04</span>功能需求</h2>
+
+  <h3 id="s4-1" data-page-node-id="ypyRnybcCGuRCmAdMixFgH">4.1 账号管理</h3>
+  <h4 data-page-node-id="Km764uWXRTgTPcOkaPtCFh">4.1.1 账号来源与主数据</h4>
+  <div class="tbl-wrap" data-page-node-id="Gg3eRHNgweMuXMn1nfNRgM">
+  <table data-page-node-id="4tJD1nVGqHSBGHKKHQNAi9">
+    <thead data-page-node-id="DMU2YQD0DAQJNpKbhtiIdv"><tr data-page-node-id="UkxyJ3Dyp4nediRuWmQp6u"><th data-page-node-id="vy17GYhsAXOBgjEur7dn12">编号</th><th data-page-node-id="FKUDGAb66y1mjEvwRitENT">需求描述</th><th data-page-node-id="GHLVH4hRG65ZFwWAX6Z52P">优先级</th></tr></thead>
+    <tbody data-page-node-id="GsQfqEo0TItviJCTiB0ACx">
+      <tr data-page-node-id="PgaHVJjEDDpeCQLhoAuzGw"><td data-page-node-id="LyDIysM8MkFhb2a5EXPu3F">FR-1.1</td><td data-page-node-id="jU323kWXjTHaMNItsEIaPW">系统应提供与 HR 系统的主数据同步接口，获取内部员工的姓名、所属分公司、所属部门、岗位、电话号码等信息。</td><td data-page-node-id="v8xLKsyUH1wXLF0Hnwp2Fl"><span class="tag red" data-page-node-id="DUyjoPHxexBRPFeXpFkUVF">高</span></td></tr>
+      <tr data-page-node-id="F8hFNQe2tD1y6ouwkVsp02"><td data-page-node-id="l20CE37EU8InhC8Mp2qCgY">FR-1.2</td><td data-page-node-id="QgrtprZMvt1gYAy7aIeJMs">同步应为增量方式，支持定时与实时触发；HR 新增员工自动开户，信息变更自动同步，离职自动停用账号。</td><td data-page-node-id="rD8tVLU7M1AUPsWWmYmROF"><span class="tag red" data-page-node-id="W7cXTO3feFV85F5l5vO0n8">高</span></td></tr>
+      <tr data-page-node-id="PVP49uMCJcJyprUEpx189E"><td data-page-node-id="oBWJv4qD2cPMUFYN5TlGzo">FR-1.3</td><td data-page-node-id="BGJM381dfIcoiWDpZSGV63">同步任务应为异步执行，不得与认证服务争抢资源，且具备失败重试与异常告警能力。</td><td data-page-node-id="bCt3M92rNsYV6LAEcuo1Zd"><span class="tag red" data-page-node-id="wKzeEEfS1GcQVCBCQyOmo5">高</span></td></tr>
+      <tr data-page-node-id="3KFi1uJedFMLUjbPxbASgt"><td data-page-node-id="8QIeMeXSErZFrac13DNJpe">FR-1.4</td><td data-page-node-id="STeRKfASypHj6eD6DdSpd9">系统应支持外包人员账号的手工录入，由部门管理员操作，录入时须填写有效期，并自动打上"外部人员"标签。</td><td data-page-node-id="211SYPJUnA44Uai8iDArnm"><span class="tag red" data-page-node-id="tnlNLEQuwbYMFvzFzRN8KE">高</span></td></tr>
+      <tr data-page-node-id="2uVCdTVoFHVVErvHPc9oG5"><td data-page-node-id="igA0i7LQS2YOZ08sCw1Kcp">FR-1.5</td><td data-page-node-id="W8Q6T4FC3ZMKejVpA28H8N">外包账号到达有效期后应自动停用，不依赖人工操作；管理员可续期。</td><td data-page-node-id="biK892xEWDKbOhtOTU9gRB"><span class="tag red" data-page-node-id="xhnCFZwTEBr5D9QxXvUFSH">高</span></td></tr>
+      <tr data-page-node-id="7ZFrSuahgJvQT1P5R3Nt3g"><td data-page-node-id="rzzmRC6RbfeUzVwsAr8h0o">FR-1.6</td><td data-page-node-id="PDtkMrwH1NlLqPrFlZNCdX">外包账号录入不设置审批环节（业务方确认）。</td><td data-page-node-id="cNP3DWQl0qvk5WAP0fTrN7"><span class="tag amber" data-page-node-id="qRQAyyHJS7mPehjeUSg2Hd">中</span></td></tr>
+      <tr><td>FR-1.7</td><td>外包人员账号字段与内部员工保持一致（姓名、所属分公司、所属部门、岗位、电话、用户名），另增"所属外包公司"（必填）与"合同 / 项目名称"（选填）两个字段，用于追责与按公司批量回收账号。</td><td><span class="tag red">高</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4 data-page-node-id="RrwfNi99HuZHDg0R2D9ZLA">4.1.2 账号规则</h4>
+  <ul data-page-node-id="7wdTK4jZTM1sAiSzj8bVEz">
+    <li data-page-node-id="261NOAy9QVLftc3PAyOn0W">用户名规则：姓名拼音；如发生重名，追加电话号码后四位。</li>
+    <li data-page-node-id="y8hHw7KK8k8IvTQh00dxu7">用户名一经生成<b data-page-node-id="XbgPkQjFGSaMXE3DqGUf18">不可修改</b>，员工无自助改名入口。</li>
+    <li data-page-node-id="PS1C3Rd1Rd6lHEeqeuijmf">账号基础信息包含：姓名、所属分公司、所属部门、岗位、电话号码、用户名。</li>
+    <li data-page-node-id="0fax6PXL4jtRTOslfDKbMC">账号状态：正常 / 停用 / 锁定。所有状态变更须记录操作人与原因。</li>
+    <li>系统不采集身份证号等实名信息，以降低个人信息合规负担。</li>
+  </ul>
+
+  <h4 data-page-node-id="MSKypJMAbsANDEKJ4WR6hL">4.1.3 账号生命周期</h4>
+  <div class="tbl-wrap" data-page-node-id="eXDOBsQL3SK3NViOmTDJjC">
+  <table data-page-node-id="a1mYDAQ446g0ZFJPgS5Y5t">
+    <thead data-page-node-id="MKu7IftU0ax2DGjyzWHEhl"><tr data-page-node-id="IRN41kukTX0cUbvqIKxVCP"><th data-page-node-id="vWyC3dryZqOui01tPOFsGk">阶段</th><th data-page-node-id="yr5WAnGxAA5e8IfajhVaIn">动作</th><th data-page-node-id="0v5EKrfg4ONzUBn1xTgeVF">权限处理</th></tr></thead>
+    <tbody data-page-node-id="BHGSa9xKEPuUkGOiy5ucev">
+      <tr data-page-node-id="NrpBm89oIjNtxS3HZ7BMpJ"><td data-page-node-id="FvzcvluwEwHRoZmVrsd68I">入职</td><td data-page-node-id="cPocsJTvJ3ezHaCJomFziB">HR 登记后自动开户</td><td data-page-node-id="rJlj8Xkzf5wPA7SpMsEt9m">自动授予部门 / 岗位基线角色</td></tr>
+      <tr data-page-node-id="24mmaJyNNeYx0TLpm2M4Y7"><td data-page-node-id="hftLOA7I5uHWDQDKxUjHd8">在职变更</td><td data-page-node-id="UUmfVePhKw8jmeyj7xBKiI">部门或岗位变动</td><td data-page-node-id="8fKWbTSywBRGdz54chos2b">角色随之重算，旧角色回收</td></tr>
+      <tr data-page-node-id="zNa8A9LWQGv0J1mSQNF0Ru"><td data-page-node-id="evV2K8sxQAIPe1I7VMZecf">外包到期</td><td data-page-node-id="kAwscz8miEUVJjN4Vef8iC">有效期届满</td><td data-page-node-id="qcP2GZR9oXJ3gHvgEIQ323">账号自动停用，权限失效</td></tr>
+      <tr data-page-node-id="o12fWUvM0LtC1cMBNKuqTq"><td data-page-node-id="kBUINi4ktEIX5nLb1pTAhG">离职</td><td data-page-node-id="xKTxM0lExzcA4EfM2LQMrS">HR 离职事件</td><td data-page-node-id="jqLLcFUBejL8I7sJsjCoG4">账号停用 + 会话踢出 + 权限回收</td></tr>
+      <tr data-page-node-id="ZYFGymJntDSi9u1oQ6AQM6"><td data-page-node-id="E8LNYJJOXzLihK5zy9ZSZf">冻结</td><td data-page-node-id="ykuNiYGn7Z2mS7pmoOC9Fh">管理员手工操作</td><td data-page-node-id="cefuWhHg93Twtg9qQf0Slm">账号暂停，权限保留但不可用</td></tr>
+      <tr><td>到期预警</td><td>外包账号到期前 15 / 7 / 1 天</td><td>向部门管理员推送提醒（站内信 + 邮件）</td></tr>
+      <tr><td>销号</td><td>停用满 2 年</td><td>账号归档销号，保留脱敏的历史记录供审计追溯</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="s4-2" data-page-node-id="Zg4OGXr95Q3aXCw6OwwjNe">4.2 组织与岗位管理</h3>
+  <ul data-page-node-id="uGhg4TKTvGbAivThf9adxS">
+    <li data-page-node-id="8jdDGifr9sL61INpAxGFvV">组织架构为三级：<code data-page-node-id="BDgkPip6jfeOFBrdxFSXfa">分公司 → 部门 → 岗位</code>，来源为 HR 主数据，IAM 内以只读方式展示。</li>
+    <li data-page-node-id="uSpiQKr7vOTnGdjvYx9WvO">岗位目录由 HR 提供并同步至 IAM，作为公司角色绑定的依据。</li>
+    <li data-page-node-id="H1vpocaQFrZSs9BivxWtDv">支持按分公司、部门、岗位维度检索人员与权限分布。</li>
+    <li data-page-node-id="7qkzi16qHW5iRduQNiV6YK">组织架构调整（部门合并、岗位撤销）时，需提供影响面提示：受影响人数、受影响的角色与权限。</li>
+    <li>职责分工：<b>岗位目录由 HR 维护</b>（人事概念），<b>公司角色由安全管理员维护</b>（权限概念），两者以 1:1 映射关联。</li>
+    <li>HR 侧岗位发生变动时，IAM 仅产生"待处理提示"，<b>不自动创建或删除角色</b>，由安全管理员确认后处理。</li>
+  </ul>
+
+  <h3 id="s4-3" data-page-node-id="HILp3YIHSOPIsTEJrIfy41">4.3 系统档案管理</h3>
+  <div class="tbl-wrap" data-page-node-id="eZqmqItDMRjajGHh09QPbM">
+  <table data-page-node-id="dMJYppCRqipVfwWRepBMdG">
+    <thead data-page-node-id="8TyU2CjPOp4zXuJ2Sdwwk1"><tr data-page-node-id="rukHmCCA9hh8rT0uEirXNX"><th data-page-node-id="smjAUWHjCBpRhOX89dRsOW">编号</th><th data-page-node-id="6YtYllUMyx6FAAKJGHnK5X">需求描述</th><th data-page-node-id="2sTEGdupovD0nO1udiK9Hn">优先级</th></tr></thead>
+    <tbody data-page-node-id="0jIg1lOE14bp3D4AoSJ1qz">
+      <tr data-page-node-id="FFinNPx1BxBXEPCy1PjmIX"><td data-page-node-id="eMhMTZ8OG0Vo61cRqBJGlj">FR-3.1</td><td data-page-node-id="O2jZEGZfHG02SRdj1KoUxx">系统应支持业务系统档案的录入与维护，字段包括：系统名称、系统编码、系统说明、负责人、状态。</td><td data-page-node-id="MmwPgGvrfBPvitWR9FYikg"><span class="tag red" data-page-node-id="Yf8L5DVAH4eqV4pR3HvtOh">高</span></td></tr>
+      <tr data-page-node-id="T37FeWoQcQxKasoTyjoGEi"><td data-page-node-id="FG2djvMoBShNfHJBsXJ3bJ">FR-3.2</td><td data-page-node-id="Nh2jr6tuOyltzDGpjOQreY">每个系统下可维护模块清单，每个模块下可维护功能点清单，含功能名称、功能说明、编码。</td><td data-page-node-id="ucN3gywngIemjIkPskpALD"><span class="tag red" data-page-node-id="0YURh9FSOCvWEaDxIhGImV">高</span></td></tr>
+      <tr data-page-node-id="EdcgJDSrhSvIG7WtGsTZGw"><td data-page-node-id="WQFf8ZUwLSwIcn8Mb3Yyuw">FR-3.3</td><td data-page-node-id="HEXirvGdNYOVFuZXIptIG3">功能点应预留类型字段（菜单 / 页面 / 按钮 / 接口等），本期统一为功能点粒度，为后续细化保留扩展能力。</td><td data-page-node-id="LwDHYPRIJWwutldiXZMqmj"><span class="tag amber" data-page-node-id="X0X5F9Q3yCASAAAkDAt8IF">中</span></td></tr>
+      <tr data-page-node-id="MAVZkhH8fY8SA7nGyC3ObI"><td data-page-node-id="5zT5g0iLd1700vQIFXW0zf">FR-3.4</td><td data-page-node-id="pwH46cVfdUMxWA5KwXHWjc">系统可被标记为"敏感系统"，由总部安全管理员维护，标记结果影响申请审批链的层级。</td><td data-page-node-id="mEttJscJ9m3hTAtPKOQcDr"><span class="tag red" data-page-node-id="0JwYaGDtIBk5lGFnCnclKD">高</span></td></tr>
+      <tr data-page-node-id="u1ZcdVi7N60cQg1o01E5KA"><td data-page-node-id="KSuW1OS2HHSLExBq9AQbLr">FR-3.5</td><td data-page-node-id="WNWQ5nHx310IeESmfXSNwI">支持后续新增系统：登记档案 → 维护功能点 → 纳入角色配置，无需改动系统架构。</td><td data-page-node-id="ptAgoSncGKGNldf5hiYnx3"><span class="tag red" data-page-node-id="qCtmOlgoslgJQEZpfV5tOo">高</span></td></tr>
+      <tr data-page-node-id="bJXxVPJeSvSDBtldyqe5s6"><td data-page-node-id="XMPtA6Q1b28hJZ8QDGVNv7">FR-3.6</td><td data-page-node-id="tGkfrTaeCCsmc3VzPM8ZEl">系统应提供标准接入接口（基于 OIDC / OAuth2），供后续业务系统真实对接认证与鉴权。</td><td data-page-node-id="mvUHaGkM9zJwOFADjPnw84"><span class="tag amber" data-page-node-id="T8NUAVlVCEAxwpclGUNDCc">中</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="box" data-page-node-id="9oMElfiAGt8dOh5bmB2xOl"><span class="lbl" data-page-node-id="AMQw1kI1Ifu7pr5bF8JR2b">说明</span>本期纳管的 20+ 系统仅作为权限对象登记，不进行真实接口对接；对接接口按标准协议设计并预留，供后续启用。</div>
+
+  <h3 id="s4-4" data-page-node-id="eAld7A4KZyY6GT1txTbTZ4">4.4 认证与单点登录</h3>
+  <h4 data-page-node-id="kyzF6MlSgBdS1goTHleK1g">4.4.1 统一认证</h4>
+  <ul data-page-node-id="FAg44LvjxnFGQk8AIpbY0H">
+    <li data-page-node-id="bs0mHN2e3kmXCxAd2ZhNqS">全公司统一使用一个账号密码登录所有已接入系统，各业务系统本地账号不再作为登录入口（保留一个应急本地管理员账号）。</li>
+    <li data-page-node-id="2E64iM1PYWzvx9Mv9KpTS1">支持统一登录门户与各系统间的免登录跳转（单点登录）。</li>
+    <li data-page-node-id="czYwFpfSVdEMIysyXAaXnc">统一登出：用户在任一入口登出后，所有已建立的会话失效。</li>
+    <li data-page-node-id="9DdQmeSiQtc0mnjhG7wqmy">会话有效期：当日有效，下班后自动失效；支持管理员强制踢出指定用户会话。</li>
+  </ul>
+
+  <h4 data-page-node-id="3qwU4pHEkTw4kZESmEM6uN">4.4.2 凭证与安全策略</h4>
+  <div class="tbl-wrap" data-page-node-id="pqTPDwJPXeovNpF2IjQEfi">
+  <table data-page-node-id="x4aMEDaC1n5si0omJcRuNo">
+    <thead data-page-node-id="gzEfdFQAaKwKswDd9xqiuI"><tr data-page-node-id="kPDGO0aX6eE4imly3usg3D"><th data-page-node-id="DGpzZSFzXtfwHkcG0nXig3">策略项</th><th data-page-node-id="CALL6jpgXHscZWpScnnFsQ">规则</th></tr></thead>
+    <tbody data-page-node-id="OMr7SdzsnCjDbiBSArn0Ez">
+      <tr data-page-node-id="UiqEYSeYXlOcsQFvDL8b94"><td data-page-node-id="XPKLpaipHmmYx9pF16k22m">密码复杂度</td><td data-page-node-id="3SYKUwsrDzku5pHl49DVyM">不少于 8 位，需包含大小写字母、数字、符号中的至少三类</td></tr>
+      <tr data-page-node-id="C7uxvVIv1Ekm7QFgHwz4aA"><td data-page-node-id="uUjoKqdn3Af77ECO49nYOj">密码有效期</td><td data-page-node-id="YHRr8hgx4W9AucFC7SPHEI">90 天强制修改，不得与最近 3 次重复</td></tr>
+      <tr data-page-node-id="H5W82e2KnbZrPHjB6YMHcV"><td data-page-node-id="DxqWAvO9co30rZlIGmo4pw">失败锁定</td><td data-page-node-id="xA8WWO52BnEXGT7jHcksFi">连续失败 5 次锁定账号 15 分钟</td></tr>
+      <tr data-page-node-id="ovoqU6lknmIKzpEg7Wb5If"><td data-page-node-id="T6h9FrDSkc4yr8qjJUtt9E">密码存储</td><td data-page-node-id="7TQpsvJuzkfUbx3JCBdRze">采用 bcrypt / Argon2 等不可逆算法加盐存储</td></tr>
+      <tr data-page-node-id="7kpJZW80dEFtEOkDkpDyZh"><td data-page-node-id="v6So3ZfTWuI0mUAuo0MCvh">传输安全</td><td data-page-node-id="Cslbj565tMzFOtgYAF8zaa">全站 HTTPS / TLS</td></tr>
+      <tr data-page-node-id="8NdM7AclQBEkNkS27AWTXB"><td data-page-node-id="3SchzhX0sf6BdUWMbF7MGg">多因素认证</td><td data-page-node-id="7I3jGRVgLlLDw3DTE8DFmV">一期实现：<b>外网来源强制</b>（账号密码 + 手机动态口令），<b>内网来源免</b>；按请求来源 IP 判定，支持后续扩展到全员强制</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4 data-page-node-id="AEY1u158BHoF7qXbayCtUb">4.4.3 与 OA 的集成</h4>
+  <ul data-page-node-id="CyODaFymbLRmkliUNiQG0a">
+    <li data-page-node-id="3PcuWvzAKn5dQaZAJFJFxN">提供标准 REST 接口：OA 侧可发起权限申请单、传入审批结果、查询申请状态。</li>
+    <li data-page-node-id="fgkhFnz46y2B2yu2s70iLl">同时提供内置轻量审批流，支持在无外部 OA 对接时独立运行。</li>
+    <li data-page-node-id="hhcBGAkiFUgqRwpfnjBfmp">OA 会话与 IAM 会话的衔接规则需明确：OA 登出时同步注销 IAM 会话。</li>
+  </ul>
+
+  <h4>4.4.4 内外网访问与多因素认证</h4>
+  <ul>
+    <li>系统同时提供内网与公网两个访问入口，两者<b>共用同一套账号体系与权限数据</b>，不设"外网专用账号"，避免形成审计盲区。</li>
+    <li>按<b>请求来源 IP</b> 判定访问来源（以网关侧记录的连接来源为准，不使用请求头中自报的地址，防止伪造绕过）：
+      <ul>
+        <li>内网来源：账号密码校验通过后直接放行。</li>
+        <li>外网来源：在账号密码校验之后<b>追加第二因素</b>（手机动态口令），未通过不得登录。</li>
+      </ul>
+    </li>
+    <li>外网侧仅部署接入层组件（反向代理、WAF、限流与防爆破）；认证服务、数据库、审计日志全部位于内网，<b>个人数据不得存储于外网区域</b>。</li>
+    <li>针对外包账号，外网登录可在 MFA 基础上追加 IP 白名单或设备绑定限制（待评估）。</li>
+    <li>MFA 的绑定与解绑需提供管理流程：员工换号、更换设备时可由管理员重置，操作留痕。</li>
+    <li>VPN 若被认定为内网来源，则 VPN 自身的认证强度必须满足要求，否则"内网免 MFA"的策略形同虚设。</li>
+  </ul>
+
+  <h4>4.4.5 密码找回与重置</h4>
+  <ul>
+    <li>员工可通过自助方式重置密码：校验手机号（与 HR 主数据一致）+ 工号后自行设置新密码，重置成功后强制踢出已有会话。</li>
+    <li>自助失败（如手机号已变更）时走管理员兜底重置通道，须提交工单并由管理员操作，全程留痕。</li>
+    <li>管理员重置属高风险操作，纳入审计重点监控范围。</li>
+  </ul>
+
+  <h3 id="s4-5" data-page-node-id="BlFbzIBte9gDUqI18kCRQv">4.5 角色与权限管理</h3>
+  <h4 data-page-node-id="yfZ0ZvqRPPpDJJHkeCXxS2">4.5.1 角色定义</h4>
+  <div class="tbl-wrap" data-page-node-id="EYD0unwJaCeTw75N01PBtN">
+  <table data-page-node-id="1IFVAB5I2oo0QiEJYlPR3p">
+    <thead data-page-node-id="YdUiKEDaGvUrBFx0wHCi0a"><tr data-page-node-id="BEpMcRxIN62tjlUZ4vfSXE"><th data-page-node-id="1eAc6n0ZCcGdch2mhnve2Z">编号</th><th data-page-node-id="dTa6vYfum2z0iwAQZUlNIb">需求描述</th><th data-page-node-id="MTVqtz1p16cYxFuFkMELa9">优先级</th></tr></thead>
+    <tbody data-page-node-id="uPD59td1syelfvq6B1Sr2f">
+      <tr data-page-node-id="zheAkHoLplt86KeelX7tZ7"><td data-page-node-id="CZfiK6KSMaF8tMjDh2aLVQ">FR-5.1</td><td data-page-node-id="bOdYfZKGkhEIGFZQvxXgXx">角色为<b data-page-node-id="livqfrnTl5jCG4q6ej88de">全公司统一角色</b>，与岗位对应，一个角色可包含多个系统的功能点。</td><td data-page-node-id="yGUQQFPsGeP4HT3Tjf9Pu2"><span class="tag red" data-page-node-id="X4048u2M3G8B9HbpoHwxyD">高</span></td></tr>
+      <tr data-page-node-id="DQKQyM8zBzh0dgExtLGAFD"><td data-page-node-id="C2PuGTCgfvsHm8dGlHFh65">FR-5.2</td><td data-page-node-id="cGOFYWkifcbqER1i474u1j">角色配置界面按业务系统分段展示，各系统的功能点独立配置，一处修改不影响其他系统。</td><td data-page-node-id="Gjhl7iDgFKpm6TjKZmiPZl"><span class="tag red" data-page-node-id="JYKA0UZEy48CKRB4Y7pHT4">高</span></td></tr>
+      <tr data-page-node-id="ETO27EBJNMDB4WNz4JsQYm"><td data-page-node-id="i5FF1HUkvEhC2fTR0OiK6s">FR-5.3</td><td data-page-node-id="TzKJUPtWYdkukfyikkdJsP">一个用户可同时拥有多个角色，最终权限为所有角色权限的并集。</td><td data-page-node-id="ktZlRTRME15tjY5NnAr7ck"><span class="tag red" data-page-node-id="mYsASRDeTeTtoPG1EGkAGP">高</span></td></tr>
+      <tr data-page-node-id="yK3jilhu2vWRm6R0CbIda6"><td data-page-node-id="S4YcObE9I4Qg5RvbPDKHI3">FR-5.4</td><td data-page-node-id="UNCOIaHNHpcEGtWhhHVDEQ">应提供角色的复制、停用、变更历史查询能力；角色停用后，已绑定的用户不再获得该角色权限。</td><td data-page-node-id="V0jo0EcGnuBhjtWwS1g2BV"><span class="tag amber" data-page-node-id="DR1SuemFiBZVUv3mWJymAu">中</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4 data-page-node-id="oMe4otXAbB18mbB3mUqOgC">4.5.2 基线 + 差量（分公司差异）</h4>
+  <ul data-page-node-id="Urk2wdqacpzSeIkQWZ1KgV">
+    <li data-page-node-id="L7Cy4AAicWOtR5LlfQ5yt9">每个岗位对应一个全公司<b data-page-node-id="TSfw53txYYzIyTYIkImsri">基线角色</b>，定义该岗位的默认权限全集。</li>
+    <li data-page-node-id="Vruo5ijPP3Ofyv5FPuD917">分公司可对基线做差量调整，差量只记录"增加"与"禁用"的功能点，不复制完整角色。</li>
+    <li data-page-node-id="9yonJCtvvpZktfgZ8cDD3I">差量由<b data-page-node-id="ANBdATG0KeD4jNsfqX3g6D">各分公司管理员自行配置</b>，约束为：仅可操作本分公司、变更全量记录日志、总部安全管理员可冻结或回滚任一分公司的差量。</li>
+    <li>差量的最小作用域为<b>分公司 × 岗位</b>：一条差量对该分公司内所有使用该岗位的人员生效，不区分部门。</li>
+    <li>同一分公司内、不同部门但同岗位的<b>个别</b>权限差异，通过例外授予解决，不将差量下沉到部门级。</li>
+    <li data-page-node-id="zI7B4RA0PtCzoQCCxGNznv">支持查看某分公司某岗位的"最终生效权限 = 基线 + 增量 − 禁用"的对照视图。</li>
+  </ul>
+
+  <h4 data-page-node-id="tdmSkDTHMDJygEl9eznwIN">4.5.3 例外授予</h4>
+  <ul data-page-node-id="1ogvHCkRUANlFQgkS23Mki">
+    <li data-page-node-id="ugbhDbgYvDrCr17N3PGTQ5">员工在岗位权限之外获得的额外权限，以用户维度的"例外授予"记录存储。</li>
+    <li data-page-node-id="ocsOX0ENHweA8gILWp0D56">例外授予<b data-page-node-id="WBLft7qUI7ABSPdegAVpRS">不设有效期、不做定期复审</b>（业务方确认），但必须完整记录申请人、审批人、授权时间与事由。</li>
+    <li data-page-node-id="nsgWoxjBNNQYeZG7FBUJhf">提供例外授予清单查询，便于审计部门按需盘点。</li>
+  </ul>
+
+  <h4>4.5.4 权限可见范围</h4>
+  <ul>
+    <li><b>默认最小可见</b>：普通员工仅可查询本人权限与本人申请记录。</li>
+    <li>部门负责人可查询本部门人员的权限摘要（不展开敏感系统的权限明细）。</li>
+    <li>跨部门查询与全量权限清单导出，仅限安全管理员与审计员。</li>
+  </ul>
+
+  <h3 id="s4-6" data-page-node-id="GDDB38PMlOqqYEZsXgl5m0">4.6 授权申请与审批</h3>
+  <h4 data-page-node-id="AuwI3e3pTV5mMrQ64mqKR3">4.6.1 申请类型</h4>
+  <ul data-page-node-id="AvtM2wKKheyTk2E8oMFEdM">
+    <li data-page-node-id="BqfE5XMktOg7qwEB6uN1BW">常规角色申请：申请本部门常用角色。</li>
+    <li data-page-node-id="Veya8gDgDyh2aoRLOb2TaB">跨部门 / 敏感系统权限申请：涉及被标记为敏感的系统，或超出本部门范围的角色。</li>
+    <li data-page-node-id="5JLYWfPpVJ6TioXEAhbjAI">例外权限申请：在岗位权限之外单独申请若干功能点。</li>
+    <li data-page-node-id="6ICdz2cLFyL9KmuXcHxEnY">外包人员账号申请：由部门管理员直接录入，不走审批。</li>
+  </ul>
+
+  <h4 data-page-node-id="ulKvvPbCKiXQTr9ykzbvTH">4.6.2 审批链</h4>
+  <div class="tbl-wrap" data-page-node-id="iNxA8vhOQB2DUD1DdHa4hP">
+  <table data-page-node-id="SssnzmNyAhESYRvBR0soxi">
+    <thead data-page-node-id="AM8IzHSRzph2YHZHJtq8G4"><tr data-page-node-id="PShIph6acNqpAaqHG4mcDy"><th data-page-node-id="4sfJOxDMrpUe5DIkJi5yeC">申请类型</th><th data-page-node-id="B65allHywkevC7FJdWH3z9">审批链</th><th data-page-node-id="MFhrCTyX6yoIVevBBMtqcu">备注</th></tr></thead>
+    <tbody data-page-node-id="2zbUlsVUmkjYDVUKFsjZdd">
+      <tr data-page-node-id="ZcmjiO8seCZ6NKxjjMeU4R"><td data-page-node-id="0nmGEedVqNK8ozejWYmhbR">常规角色（非敏感系统）</td><td data-page-node-id="jfMvwP4dNQqccZY7ULLpNm">部门负责人 → 通过</td><td data-page-node-id="18mo5b3v83Hr8ye1vu2pVb">一级审批</td></tr>
+      <tr data-page-node-id="zTKEfk5YzE4mtXi7mBJlX2"><td data-page-node-id="JBZdaKveuVn1YJRFWlKZXd">敏感系统 / 跨部门角色</td><td data-page-node-id="QF4FATr816eXFWtrhFGF92">部门负责人 → 系统或分公司管理员 → 通过</td><td data-page-node-id="03YoCEwnCgH57AoTGVrb9U">两级审批，敏感标记由总部维护</td></tr>
+      <tr data-page-node-id="NMgk7jri8jKgEqyb7bDANn"><td data-page-node-id="oiQiZmUDmQ5hJiY3WoOr0q">例外权限（永久）</td><td data-page-node-id="ez9xQwERMBw2nLcq23da5B">部门负责人 → 分公司管理员 → 通过</td><td data-page-node-id="xVrDdQYKEvyTQdCo5kYaOY">记录为永久授权，不设到期</td></tr>
+      <tr data-page-node-id="OInJqQkwshagLC4DE1DiAG"><td data-page-node-id="jqMqi4GOSoaitb3BwYflhB">权限回收</td><td data-page-node-id="NnNgGBx0kxHCD4Ej27dZkq">无需审批</td><td data-page-node-id="hEsFki3tQEr4imv7EbZTxA">由 HR 事件或管理员直接触发</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4 data-page-node-id="Nz6MJiHPSB63lEEtb2sr3I">4.6.3 流程要求</h4>
+  <div class="flow" data-page-node-id="wabZBjBxgXhw9uguYBus0E">
+    <span class="step" data-page-node-id="jjLqmL24CckBsSvz66xszO">提交申请</span><span class="arw" data-page-node-id="MBY9OjFIz7jVwEvHo6JdgP">→</span>
+    <span class="step" data-page-node-id="X3H9JqeAzj631SxDqvdscN">按敏感度定审批链</span><span class="arw" data-page-node-id="SSLcj40mWA4pQlJz8VT48C">→</span>
+    <span class="step" data-page-node-id="lBm2wEW7CyEvZjeIPiR4mP">逐级审批</span><span class="arw" data-page-node-id="M32PM3KFN4FQbEkE3HNEqX">→</span>
+    <span class="step" data-page-node-id="96LlCtwK2QZlBWp0ZbAos9">IAM 自动生效</span><span class="arw" data-page-node-id="SqfJOuXdt0tXVbLsdVommp">→</span>
+    <span class="step" data-page-node-id="qD7G3YuiD3oeejtZPojjGC">通知申请人</span>
+  </div>
+  <ul data-page-node-id="64JToAygeR3CgMbNZmDgHr">
+    <li data-page-node-id="60BXsDvGpm1Th3IonGJl5o">申请单需包含：申请人、申请系统与功能点、事由、期望生效时间。</li>
+    <li data-page-node-id="lEo5CkfHygtGYDauSokWJZ">审批通过后由系统自动授予权限，无需人工在业务系统中操作。</li>
+    <li data-page-node-id="eDpzBbeQkWLCHefCxWjmaV">支持撤回、驳回、转办；驳回须填写原因。</li>
+    <li data-page-node-id="CHpZfNPJSRaXSRLHz3ApNY">全流程关键节点通知申请人，通知渠道为<b>站内信（必达）+ 邮件（提醒）</b>双通道，不采用短信。</li>
+  </ul>
+
+  <h3 id="s4-7" data-page-node-id="KH6nQxFFcXjdk9CYFTPlWO">4.7 审计与日志</h3>
+  <div class="tbl-wrap" data-page-node-id="a31Y12nX2cQtKgKo9XK5Go">
+  <table data-page-node-id="PPfhP2DnEk4Fbaz8Ze2tEy">
+    <thead data-page-node-id="cEFPORd0aG4t1342EVPrNr"><tr data-page-node-id="gUgcpfzRowrvJfF1Xasfnb"><th data-page-node-id="jrwzK4ByPxpQuqYiTlhGsn">日志类型</th><th data-page-node-id="rNzjKLdao0f0lqJifCoXmy">记录内容</th></tr></thead>
+    <tbody data-page-node-id="wAJudclqy3y6em4EmhhdqC">
+      <tr data-page-node-id="2AkBxtCaFMN4vvZbY1sBPc"><td data-page-node-id="dB3nAcw8hMhYS7d2vvJzjF">登录日志</td><td data-page-node-id="U8ypD7T26GKNorwdu6UBDv">账号、时间、来源 IP、终端信息、成功 / 失败、失败原因</td></tr>
+      <tr data-page-node-id="xIzCayVrKiO9BBotzkeqeC"><td data-page-node-id="Vfe6UZZCIUCWnEwjRdqBwp">权限变更日志</td><td data-page-node-id="dYbE99mbBLSoiOhl5fEMSG">操作人、时间、对象用户、变更前权限、变更后权限、变更事由、关联申请单</td></tr>
+      <tr data-page-node-id="kNdX3i0Bk1d1Zy0DH1dmPq"><td data-page-node-id="FxIGZfI8mGfGdkJbF7DTAz">审批日志</td><td data-page-node-id="8ZrGmQom3uwsEUC3XaoE8F">申请单号、各审批节点、审批人、审批意见、时间</td></tr>
+      <tr data-page-node-id="P2ArN67SQuLWKQEadlJsPd"><td data-page-node-id="9GwhPKwPhDbPLVFrj5jCxf">管理操作日志</td><td data-page-node-id="6xNZAKzxQeA55wfSiUDn9r">账号增删改、角色与功能点变更、系统档案变更、参数变更</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <ul data-page-node-id="lS5cfAU15KBHfnQggxNtFH">
+    <li data-page-node-id="bgU6ijvQDB55HeqJ0p4oas">日志<b data-page-node-id="4zKACdwteANNoB2TmAd6Ga">只写不可删</b>：任何角色（含系统管理员）均无删除权限，写入后不可篡改。</li>
+    <li data-page-node-id="wCcZ52gORIIvmmRaKMnSfv">保留期限：在线 ≥ 1 年，归档 ≥ 3 年。</li>
+    <li data-page-node-id="3O1JMb6bv4Rf8ndrMkH1ez">审计员可按人、时间、系统、操作类型多维度检索并导出审计报表。</li>
+    <li data-page-node-id="KZEsczxnD7EmsNhb1VmHe5">支持异常行为提示：如短时间内大量授权、非工作时间敏感权限变更等。</li>
+  </ul>
+
+  <h3 id="s4-8" data-page-node-id="xge9hFi2eOvYEFOlHzJMNb">4.8 自身权限管理</h3>
+  <ul data-page-node-id="7WFrJGZH1u0w6HXOSH0hpn">
+    <li data-page-node-id="seN3BDAB1tr5TyJKu9WwNP">IAM 自身的功能点同样纳入统一权限树管理，遵循同一套 RBAC 规则。</li>
+    <li data-page-node-id="2VbhglXmTX9VMgql8eSv7d">自身权限按三权分立配置：系统管理员（配置权）、安全管理员（授权权）、审计员（审计权），三者互斥，不可由同一账号兼任。</li>
+    <li data-page-node-id="rUatOHJp9K4ngvHpBOaTSg">管理员账号的登录与操作受更严格审计：登录需记录、关键操作需填写事由。</li>
+    <li data-page-node-id="QiuhRXQAXlnEzS3h3rVToz">管理员账号自身不得授予业务系统权限（除其本职岗位权限外）。</li>
+  </ul>
+</section>
+
+<section id="s5" data-page-node-id="i1MqAhVMzyxBY5sVtGLQSm">
+  <h2 data-page-node-id="CiFaidqQDWTGJ4tj7cF67Q"><span class="no" data-page-node-id="Q7CSWysBEV4CVAvjE32JqJ">05</span>权限判定规则</h2>
+
+  <h3 data-page-node-id="ZxZ6jdmQxoIFrALk03bFy0">5.1 判定时机</h3>
+  <p data-page-node-id="wJ2jzG9xQxyn0lxAGAZgvn">采用<b data-page-node-id="yxDURGisTfYv3CuHKDY1X6">实时判定</b>模式：用户访问业务系统时，由 IAM 实时计算并返回该用户的权限清单，结果可做短时缓存（建议 5 分钟）。不使用"批量下发到各系统"的模式，以保证授权与回收的即时性。</p>
+
+  <h3 data-page-node-id="yqJuBix7CuEXugYM1sJH7b">5.2 生效权限计算公式</h3>
+  <div class="box rec" data-page-node-id="VuAQVk1dJhcROa82YP8Boj"><span class="lbl" data-page-node-id="eiEuVO9R3bFJiKaEXYKrcF">计算公式</span>
+    最终权限 = （ Σ 用户岗位对应的基线角色权限 ∪ 用户其他角色权限 ）<br data-page-node-id="b3i6fHcS2z0HaOaGuVVoX1">
+    　　　　　+ 分公司差量中的增量功能点<br data-page-node-id="Y7lCk9Rt6hGneifjwjyBtP">
+    　　　　　− 分公司差量中的禁用功能点<br data-page-node-id="ktJbdwz9fBD7pOdMgt9Xd9">
+    　　　　　+ 该用户的例外授予功能点
+  </div>
+  <ul data-page-node-id="zmkQAqVZXyIPFko87iKMOA">
+    <li data-page-node-id="aUAAmQve6PuYxQNBBgMFiG">多角色取并集，不做交集，不设角色继承层级。</li>
+    <li data-page-node-id="9AaroPwMj5lNPFwXGuHAy5">差量中的"禁用"优先级高于基线，用于表达某分公司不可用的功能。</li>
+    <li data-page-node-id="ViIrA8togzVY0MZDpG1zMB">例外授予为最高优先级追加，不可被差量禁用覆盖（如业务需要覆盖，需明确规则）。</li>
+  </ul>
+
+  <h3 data-page-node-id="Bw8sr3D4R3IXeabqDjyyax">5.3 回收机制</h3>
+  <ul data-page-node-id="jOUPAZPlWfrxYMjoG6c7RS">
+    <li data-page-node-id="8pOehOPP2dqKns7EiE4fIA">权限判定即时生效：角色、差量、例外的任何变更，下一次判定即生效。</li>
+    <li data-page-node-id="5z5L80KizXLqh3tCm3DUOV">已登录会话通过"会话踢出"机制强制失效，覆盖转岗、离职、权限回收场景。</li>
+    <li data-page-node-id="f0NzgjB4QFZNr1FfbaidNu">账号停用（离职、外包到期、管理员冻结）时，权限判定直接返回空。</li>
+  </ul>
+</section>
+
+<section id="s6" data-page-node-id="Zxb5LyBo61zktyhyLY2jN0">
+  <h2 data-page-node-id="eVo6g9DvoGaJGBSBhms0rA"><span class="no" data-page-node-id="vvqkZBOPbHTCgmrwb4Gm7N">06</span>数据模型（核心实体）</h2>
+  <p data-page-node-id="BoSS0zZgLDMct3DgcpgwuV">以下为需求阶段的核心实体清单，作为设计阶段的输入。字段为初步识别，最终以数据库设计为准。</p>
+  <div class="tbl-wrap" data-page-node-id="zGoIdEVIEyGGzapSWYlm8S">
+  <table data-page-node-id="cX5oiCQHtGDJRYEWCAjCq9">
+    <thead data-page-node-id="GP7DAORKSr8tMuQwHyhDCj"><tr data-page-node-id="56070vIe6Ta1ViMEhAfb4r"><th data-page-node-id="NGD0xZKdoAEybpsbdKNoW7">实体</th><th data-page-node-id="6wNgHyF5hUnmMhDaDYMf2s">关键字段</th><th data-page-node-id="CA1FEW9DgaeI8yuJ5xMmCe">说明</th></tr></thead>
+    <tbody data-page-node-id="gCUmSiIpH6U5VoziPgIVLX">
+      <tr data-page-node-id="UuGGkn2HeN1sbs4nBj4zcn"><td data-page-node-id="k6xqlmADHjmv5nIQxiT14D"><code data-page-node-id="YgMcvj6ZNcc1p6Mn8VXFuh">用户</code></td><td data-page-node-id="1l7bCLCDQDNrURRbWYSBiH">用户名、姓名、人员类型、手机号、分公司、部门、岗位、账号状态、有效期、来源</td><td data-page-node-id="S3CLV0h6vJzTWSG5Tnvzxa">内部员工与外包人员同表，以人员类型区分</td></tr>
+      <tr data-page-node-id="PYEQJ9cYXG2AYRq2bfNtcZ"><td data-page-node-id="7dsXFUqufPZOZlIheXsQ5B"><code data-page-node-id="efEKBinzmxgR404k2h93Zs">组织</code></td><td data-page-node-id="0iqUR2pSPHp6HffB1rLK2Y">组织ID、名称、层级、上级ID</td><td data-page-node-id="NqDzdnQibdZTElKMK7GCQE">分公司 / 部门两级，来源 HR</td></tr>
+      <tr data-page-node-id="g5h2MLeOrzMGLiEr46q1iC"><td data-page-node-id="0kfKXp59riADvq7PJ8ZCFz"><code data-page-node-id="zAmu4aGQFKBdDcFxSvqa6G">岗位</code></td><td data-page-node-id="6shh6sxhsS2DykFPvs2awh">岗位ID、名称、所属部门</td><td data-page-node-id="Tb5E578o1CRyH0Ir4qcZlq">来源 HR，作为角色绑定依据</td></tr>
+      <tr data-page-node-id="y2LFi9ANcsZBjB7RiRRS3A"><td data-page-node-id="3Agfed0R8LwKGpeWmHGRJs"><code data-page-node-id="QOi4De0WFfwbe5CYwsSoIN">业务系统</code></td><td data-page-node-id="osStCk7l8n49aAo546Padv">系统编码、名称、说明、负责人、是否敏感、状态</td><td data-page-node-id="2ZOCmXsJBB8GqFrSZhHMC7">20+ 系统档案</td></tr>
+      <tr data-page-node-id="k0Flx5mpQuXTgHGSUOAoXG"><td data-page-node-id="IJTyVbQZQdOYI5cvGAnLda"><code data-page-node-id="BtAiPGsfj44jAqiJGEaNQE">模块</code></td><td data-page-node-id="be9BayOnecIc0RyoW7CWiB">模块ID、所属系统、名称</td><td data-page-node-id="R7BYDNtHSHLk7PYSBMwx8A">系统下的功能分组</td></tr>
+      <tr data-page-node-id="gGYWc6NO38fMVHzSu73ehT"><td data-page-node-id="sHq2qWBge6QAmDo213Pcef"><code data-page-node-id="tOrj5uYvQJTylIhHuF4PIB">功能点</code></td><td data-page-node-id="8q4eap1H5Bmsipm8Y5bqE8">功能编码、所属模块、名称、说明、类型</td><td data-page-node-id="s6BnRVl6MwMdEgmZIFHhXf">最小授权单元</td></tr>
+      <tr data-page-node-id="uTcQsz15BaEbQnUFc8XMEV"><td data-page-node-id="M8mDgxvM6wycn6RtuUHnTD"><code data-page-node-id="XdGoe5D0FpSoPp9hFlwT2R">角色</code></td><td data-page-node-id="yjAAASnTl66xK4EZ48HV6Q">角色编码、名称、对应岗位、类型（基线 / 其他）、状态</td><td data-page-node-id="fCx3U8IVTluM9FFAdyltNa">全公司统一角色</td></tr>
+      <tr data-page-node-id="Cq2vEufYW4gtMJ12Dl8mhb"><td data-page-node-id="5FV2bPAJqEEePE0TpmQ0Eh"><code data-page-node-id="ZkGzQTFGaahWYAFJe5YUiE">角色权限</code></td><td data-page-node-id="YnCtEWiDASyeIvgScWxXyg">角色ID、功能点ID</td><td data-page-node-id="EAWAYSePHccaDo6QhK10Jr">角色与功能点的多对多关系</td></tr>
+      <tr data-page-node-id="gXwfeK1usRXkcJZRmX5Zws"><td data-page-node-id="u1rP1tc3yTxJTBOtgHLSor"><code data-page-node-id="bkpQDwIsfYazNGLB3D0A2K">差量</code></td><td data-page-node-id="wOHELjMY2iqlUSEy9D7rOm">分公司ID、岗位ID、功能点ID、类型（增 / 禁）</td><td data-page-node-id="HGGeHk7VO8rP0zS65HdQEK">分公司级权限差异</td></tr>
+      <tr data-page-node-id="ChREPrTzqkxgtnD1UZn4Om"><td data-page-node-id="VfhVI7Zr3GXMtHspo4xMfm"><code data-page-node-id="WHesuBIfCXUku1mFkSGgJ5">用户角色</code></td><td data-page-node-id="d5Adkk2waBnLFhuMEN7jja">用户ID、角色ID、来源（自动 / 申请）、生效时间</td><td data-page-node-id="ymhaDFtWRNOC0uYAu1vMJ1">用户与角色的绑定</td></tr>
+      <tr data-page-node-id="PLo9jCOps5Q1oLOAkwBQCq"><td data-page-node-id="QPXFNqXWsLbVX7iKedVPPl"><code data-page-node-id="Wulf02ryfndmaaSewMeGi5">例外授予</code></td><td data-page-node-id="R1FJSKVbNAhSaqI4130RWH">用户ID、功能点ID、申请单号、审批人、授予时间、事由</td><td data-page-node-id="gKYZ6cGZuYO8ZkpMB9FZQi">永久有效</td></tr>
+      <tr data-page-node-id="YiNL5uEssLjXJx9Ar4BpBw"><td data-page-node-id="kg0KFiPKglzfwjBelWRggr"><code data-page-node-id="eN66cfDifVqRa5uHstJ5AA">申请单</code></td><td data-page-node-id="wfe6xKzvLaItT0llild6CG">单号、申请人、申请内容、事由、状态、当前节点</td><td data-page-node-id="fxwZFKTaL81edADmNhBpeo">含审批链快照</td></tr>
+      <tr data-page-node-id="q9L7QjKjN4f0cFJgemsHeu"><td data-page-node-id="qBHQyB35wMjji8RJDfM6VW"><code data-page-node-id="EdwJVW8cTE7cbwFMcYJz9E">审批记录</code></td><td data-page-node-id="txuTX7cYm1JBTnvyIo03Uo">申请单号、节点、审批人、意见、时间、结果</td><td data-page-node-id="DUOCr5IFnlSnwjqDE39EzX">逐级留痕</td></tr>
+      <tr data-page-node-id="4qdpyvPg4BH5PspMujhC30"><td data-page-node-id="HpiWUAKnYl4DSLa84aiGU9"><code data-page-node-id="S2D5SWR0IAuWBNwql4BtWk">操作日志</code></td><td data-page-node-id="Z3076ueY3lUUpKf3nKatR9">操作人、操作类型、对象、变更前后值、事由、时间、IP</td><td data-page-node-id="jzEOaPTRfqfu56GvL85stA">只写不可删</td></tr>
+      <tr data-page-node-id="QEf6KT7177kMqaf5NehHIk"><td data-page-node-id="ggnhHv5SuK8gI7b7ywLTgW"><code data-page-node-id="UBHyUcFt93dv8kiEiAQ12G">登录日志</code></td><td data-page-node-id="6bL5QpwGBz4LZXAhDQTbSj">账号、时间、IP、终端、结果</td><td data-page-node-id="f4cuc4F1pwJE9vRbhH24NM">只写不可删</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="s7" data-page-node-id="Pin3dF6CacKW7bYHIIEaKZ">
+  <h2 data-page-node-id="O8mZelEIJg1FQwksVk4jHN"><span class="no" data-page-node-id="RQdjMywEkrqgk5XXFyQxTz">07</span>非功能需求</h2>
+  <div class="tbl-wrap" data-page-node-id="5oTO68jU7WiVj52ZjxGXyC">
+  <table data-page-node-id="KIyJaHVluOPJY8lYxFXR2y">
+    <thead data-page-node-id="zKFzqCPhkHe9U4TZJUfOzW"><tr data-page-node-id="R7uo4LCul7Ea1TtN0FcmMK"><th data-page-node-id="kAlMwmPaQUuPDnbxzkMTo4">类别</th><th data-page-node-id="1Z0Wu64F6EEjhXa10CXkt2">指标</th><th data-page-node-id="ZK6XAXNJTSgUUNXYM1Chq1">验收方式</th></tr></thead>
+    <tbody data-page-node-id="tFAIhzZn5PgYyI4TDVnp3N">
+      <tr data-page-node-id="IkqGLKxIi83WnRfbzI0NXJ"><td data-page-node-id="Bm7n0uqCJ96Sie5YdrW1aj">认证性能</td><td data-page-node-id="KZAwY4bbzZXE6VDqaTiI3D">峰值处理能力 ≥ 10,000 次认证请求 / 秒（含首次登录与票据校验）</td><td data-page-node-id="YAkYc6JyZloAwseLFD6Aw1">压测，早高峰模型</td></tr>
+      <tr data-page-node-id="ZUBxLIijRfTF5fcrbfxMUH"><td data-page-node-id="8X6bGV0Ca34CA2QJeVDFuj">响应时间</td><td data-page-node-id="MPE3WXgy0f9TMcRAZA8nB3">认证响应 P99 &lt; 500ms</td><td data-page-node-id="KPfJkGkvxoEWNw4BKUW9Vz">压测</td></tr>
+      <tr data-page-node-id="MvtEAvLzwouxU4KMkjDtFm"><td data-page-node-id="AP4pTfyaH7R50dtKbl2MAR">可用性</td><td data-page-node-id="kvIqOWCKjx8VmNRjWtN3Lw">≥ 99.9%，认证服务故障时不影响已登录用户使用业务系统</td><td data-page-node-id="1MRfSc5oJh6cbADFDUbxlx">架构设计 + 故障演练</td></tr>
+      <tr data-page-node-id="OC5TOKFhsVV1QsgU20HTvb"><td data-page-node-id="uh9xA6M1vXloaGZboIBJkn">扩展性</td><td data-page-node-id="v5oqXWaTO1dK20YmzEj8vt">认证服务无状态、可水平扩展；新增业务系统不影响现有功能</td><td data-page-node-id="yHDiZMqIZlfJjwjpLe3Rtz">设计评审</td></tr>
+      <tr data-page-node-id="EIZMxrI594kh4TUPmAOEwz"><td data-page-node-id="P3llLaYPDpTP7SjB4XfZxC">数据一致性</td><td data-page-node-id="mB266tTodBQeQAa3aaeTJa">HR 同步异常可重试、可追溯，不产生错误授权</td><td data-page-node-id="9or6TGaZaOAguu6v8cSR7E">异常场景测试</td></tr>
+      <tr data-page-node-id="EWK4pYwMQMg0gKhC4yccwq"><td data-page-node-id="KJa1t4YidaOAzIUtB01Vje">安全合规</td><td data-page-node-id="0OXcmJS8vRkyAtCCouKe4n">符合个人信息保护要求：敏感字段脱敏展示，批量导出需审批并留痕</td><td data-page-node-id="zA2qyNAoeuNEZNNlJd3yYV">安全测试</td></tr>
+      <tr><td>外网接入安全</td><td>外网侧仅暴露接入层，具备 WAF、限流、防爆破能力；外网来源登录强制多因素认证；个人数据不落外网区域</td><td>安全测试 + 渗透测试</td></tr>
+      <tr><td>内外网一致性</td><td>内外网共用同一套账号与权限，权限变更对两个入口同时生效</td><td>功能测试</td></tr>
+      <tr data-page-node-id="dlqdBHShDd9D02NPj2Ua41"><td data-page-node-id="9pJ91pNE2vfjvOOfFuNNJy">审计合规</td><td data-page-node-id="unnMyTj9h4jzckrcjEnNeB">日志只写不可删，保留在线 ≥ 1 年、归档 ≥ 3 年</td><td data-page-node-id="etfptYBWflIVoVTDJ94RRE">现场验证</td></tr>
+      <tr data-page-node-id="LqGcjWAYtv5BxgGEgegOi9"><td data-page-node-id="Z3eos3YU9wSXyS26Xhzb8Z">易用性</td><td data-page-node-id="TuNuwudZt3Otx6qs8GFY4T">员工登录、申请、查看权限的操作路径不超过 3 步</td><td data-page-node-id="xkkgsw3ZvRVjL4PkhVxL2g">可用性测试</td></tr>
+      <tr data-page-node-id="tAn1acFK3kplGHuohV7CE5"><td data-page-node-id="Jy0lLUaOhRRxZboWJ8hgL1">兼容性</td><td data-page-node-id="JOrxqy7d6RdSx3IhFA4oQh">支持主流浏览器当前及前两个大版本；支持移动端审批</td><td data-page-node-id="HYEedRwxUCrp4B99jZGSRB">兼容性测试</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 data-page-node-id="GsRkhbConjmVDcZLK8rn6v">7.1 数据安全细则</h3>
+  <ul data-page-node-id="czvvui4H9sYmPPAiPlAKzN">
+    <li data-page-node-id="xVvNFJ1SEnn9JrA01CPBK6">手机号等个人敏感信息在界面上一律脱敏展示（如 <code data-page-node-id="cHDTFjAoTbXLEM2iI9HEbK">138****8888</code>），完整信息仅审计场景按权限查看。</li>
+    <li data-page-node-id="uh0SJZ7w2wMcFfsSWMTC8J">批量导出人员信息需单独审批，导出行为全程留痕（记录导出人、条件、条数、时间）。</li>
+    <li data-page-node-id="H5QhVdVvrf9dC325AfhpSp">密码不可逆加密存储，接口返回体不得包含密码字段。</li>
+    <li data-page-node-id="lXqd17lEpV2tk9IUG75V21">管理员账号建议启用更严格的登录策略（如限制 IP 段、强制二次校验）。</li>
+  </ul>
+</section>
+
+<section id="s8" data-page-node-id="MyFOsyZnhg9emP25S3jRGA">
+  <h2 data-page-node-id="PwuBZRK9dFesIRiEpI9D81"><span class="no" data-page-node-id="wspmg71t20uRCUup6d5z6T">08</span>风险与已知取舍</h2>
+  <p data-page-node-id="vKhpkoTCqiloNhR3zxMXqY">以下为需求评审中已明确识别、并经业务方确认接受的风险，记录在案以便后续管控。</p>
+  <div class="box risk" data-page-node-id="ebc2EIHurtrpwLXUAvMx6h"><span class="lbl" data-page-node-id="rS4LDOv0WNDF1UR5nksDzn">风险 R1 · 外包账号缺少职责分离</span>外包人员账号由部门管理员手工录入，且不设审批环节；同时该管理员与本部门负责人角色常为同一人。存在"批量造号"风险，且无法通过流程制约。</div>
+  <p style="margin-top:-6px; font-size:13.5px; color:var(--ink2);" data-page-node-id="0EadwZcPmydSU3lC11u1m9"><b data-page-node-id="0xPYAemz0LpClBLeowpGQN">管控建议</b>：外包账号本身不授予敏感系统权限；对外包账号的开户行为做单独审计报表，由审计员定期抽查；管理员账号登录强制留痕。</p>
+
+  <div class="box risk" data-page-node-id="UD0VIWGlMHxjvsLmuBbbmA"><span class="lbl" data-page-node-id="tjbBGiN5qcigqbWI9cGXmN">风险 R2 · 例外授予纯永久导致权限沉淀</span>例外权限不设有效期、不做定期复审，长期运行后会出现大量历史遗留权限，事由难以追溯，审计成本高。</div>
+  <p style="margin-top:-6px; font-size:13.5px; color:var(--ink2);" data-page-node-id="dp2sUAlYGWsIjxVghM27Gk"><b data-page-node-id="p0q6UXD2TVlEdqNDA2bHz9">管控建议</b>：例外授予强制填写事由并关联申请单；提供按"授予时间超过 N 年 / 长期未使用"筛选的清单，供审计员主动盘点。</p>
+
+  <div class="box risk" data-page-node-id="m4ZMfI5yHm2d7dbJqkJlUf"><span class="lbl" data-page-node-id="mLJY8asQCnaGQLXWHlwmDX">风险 R3 · 分公司差量自配可能失控</span>差量由各分公司管理员自行配置，缺少统一节奏，可能出现同类岗位跨分公司权限差异难以解释。</div>
+  <p style="margin-top:-6px; font-size:13.5px; color:var(--ink2);" data-page-node-id="owGI05a1qH5pW2fmKrVdsf"><b data-page-node-id="O9kHPxSzteclE7NDBfS5i0">管控建议</b>：总部保留冻结与回滚权；提供"跨分公司同岗位权限差异对比"报表，供总部定期检视。</p>
+
+  <div class="box decide" data-page-node-id="yEN977YWkQQsLPoQNH9d7b"><span class="lbl" data-page-node-id="TNfzGzivH9JreYT2MdyAV">已确认取舍</span>不做功能点到菜单 / 按钮级的细化、不实施业务系统真实对接、审批链不引入金额或数据量维度、内网不做设备绑定、一期不做"内网记住我"（免输密码）。以上均为主动取舍，后续按需扩展。</div>
+</section>
+
+<section id="s9" data-page-node-id="eyxYzgFoeEyOGqr7RVoBHN">
+  <h2 data-page-node-id="GgiAEwjLkGXwI4Hv50ElvF"><span class="no" data-page-node-id="itSGqY7pnw8BKpPTnd41jj">09</span>待确认清单</h2>
+  <p data-page-node-id="pwHRgC6uxCoXIpnof1HJLm">本节记录需求评审中的待确认事项及其决议状态。已决议条目保留在案，便于追溯当时的取舍理由；未决条目继续挂起。</p>
+  <ul class="todo-list" data-page-node-id="P47E8wIWFLzn2C4ZeElEyk">
+    <li><span class="q">Q1 · 岗位目录的完整性与归属 <span class="tag teal">已决议</span></span><span class="w">结论：岗位目录由 HR 维护（人事概念），公司角色由安全管理员维护（权限概念），两者以 1:1 映射关联；HR 侧岗位变动时系统仅产生待处理提示，不自动创建或删除角色。</span></li>
+    <li><span class="q">Q2 · 外包人员录入的字段完整度 <span class="tag teal">已决议</span></span><span class="w">结论：外包人员字段与内部员工一致（姓名、分公司、部门、电话、用户名），另增"所属外包公司"（必填，用于追责与按公司批量回收）与"合同 / 项目名称"（选填）；不采集身份证号等实名信息。</span></li>
+    <li data-page-node-id="g6gxjL5l5TNubwB1IfdU1U"><span class="q" data-page-node-id="VJr7IC62nPmefXDSeARmya">Q3 · 差量的粒度边界 <span class="tag teal">已决议</span></span><span class="w" data-page-node-id="86jZGvwqRwS6Y9yGTpGouE">结论：差量最小作用域定为「分公司 × 岗位」；同一分公司内不同部门、同岗位的个别差异走例外授予，不下沉到部门级。理由：配置量可控，个别需求用个别机制处理。</span></li>
+    <li><span class="q">Q4 · 通知渠道 <span class="tag teal">已决议</span></span><span class="w">结论：站内信（必达）+ 邮件（提醒）双通道，不采用短信；外包账号到期前 15 / 7 / 1 天三次预警推送至部门管理员。</span></li>
+    <li><span class="q">Q5 · 密码找回方式 <span class="tag teal">已决议</span></span><span class="w">结论：一期实现自助重置（手机号 + 工号校验）；管理员重置作为兜底通道，须提工单并全程留痕。</span></li>
+    <li data-page-node-id="JM7qcJqeJf6M2WXFAFwunX"><span class="q" data-page-node-id="4kJMMqybLcXiae6aUdcGu0">Q6 · 登录终端的范围 <span class="tag teal">已决议</span></span><span class="w" data-page-node-id="MaVtaHUL4Y54zrQ1Cw8kK3">结论：内外网双入口，共用同一套账号与权限；内网来源账号密码直接放行，外网来源强制第二因素（MFA）；不区分账号类型，按请求来源 IP 判定策略；一期不做设备绑定。待确认：VPN 的发放与认证方式（若 VPN 门槛过低，内网免 MFA 的策略等于被绕过）。</span></li>
+    <li><span class="q">Q7 · 考勤打卡是否纳入 <span class="tag teal">已决议</span></span><span class="w">结论：不纳入 IAM 承载范围；考勤系统作为接入方使用统一认证，其打卡峰值由考勤系统自身承担，不计入 IAM 认证容量模型。</span></li>
+    <li><span class="q">Q8 · 权限查询的开放范围 <span class="tag teal">已决议</span></span><span class="w">结论：默认最小可见——员工仅可查询本人权限；部门负责人可查询本部门人员权限摘要；跨部门与全量查询仅限安全管理员与审计员。</span></li>
+    <li><span class="q">Q9 · 数据保留与销号 <span class="tag teal">已决议</span></span><span class="w">结论：离职即时停用账号；数据保留 2 年后销号，销号时保留脱敏的历史记录（用户名、权限变更记录）供审计追溯，与日志归档 3 年对齐。</span></li>
+    <li data-page-node-id="8nbBj5yEzImDVuIK0Pf9g1"><span class="q" data-page-node-id="CUgPUpfMwbNVxdo6uUt6ih">Q10 · 部署与运维要求 <span class="tag amber">部分决议</span></span><span class="w" data-page-node-id="z3OwSlF5QFwZFkKlwR5LXh">已定：私有化部署，内网 + 外网双区，外网侧仅做接入层（反向代理 / WAF / 限流），认证服务、数据库、日志全部在内网，个人数据不落外网。仍待确认：① 是否有等保或行业合规要求（对外提供服务通常等级上抬，须先问清再定架构）；② 运维责任划分（建议硬件与中间件归 IT 运维、应用归开发方）。</span></li>
+  </ul>
+</section>
+
+<section id="s10" data-page-node-id="FrxNfzE83Iv2DsXBxUjTUR">
+  <h2 data-page-node-id="ICEeP4vfuBxfBkhJV9tMAX"><span class="no" data-page-node-id="PPVsp2JCRVmzl0wkfNnrr6">10</span>变更记录</h2>
+  <div class="tbl-wrap" data-page-node-id="JcqmljQ5o5Sa0Fm4jgiV7w">
+  <table data-page-node-id="Pyyl20J5Ehi0mNAVXSaxjA">
+    <thead data-page-node-id="NMLoP9xSxPPgWEqtHB7iEN"><tr data-page-node-id="OXBC7M65t4TB2QPddu9GEt"><th data-page-node-id="aBloo9REj2H9xztuZoWZU7">版本</th><th data-page-node-id="P01gITfyijT3yF1E6yAWwZ">日期</th><th data-page-node-id="4DZuMjq1FSuCGVRuBlIn1h">变更内容</th><th data-page-node-id="PtlMT5PTzL6aM5Ldq15cKz">说明</th></tr></thead>
+    <tbody data-page-node-id="x6yxn9EtjN8DjdNDgDXzW1">
+      <tr data-page-node-id="WEnUCQJyggxLJwF6BJc2Lj"><td data-page-node-id="9ov0eE26NNckW9A0OxitVn">v0.1</td><td data-page-node-id="AnPJclbdGumAA5IAHmdmqq">2026-10-15</td><td data-page-node-id="1DbrVxrELNjiOQRLVeJZ8Q">基于需求访谈形成骨架版，覆盖十大模块与关键决策</td><td data-page-node-id="xm8AZPIOv0AclMU2aOMZPJ">待业务方补充后升级为 v0.2</td></tr>
+      <tr><td>v0.2</td><td>2026-10-15</td><td>决议 Q3（差量作用域 = 分公司 × 岗位）、Q6（内外网双入口，外网强制 MFA、内网免）、Q10（私有化 + 外网仅接入层）；新增 4.4.4 内外网访问与多因素认证，非功能需求补外网接入安全与内外网一致性两条</td><td>Q1、Q2、Q4、Q5、Q7、Q8、Q9 仍待确认</td></tr>
+      <tr><td>v0.3</td><td>2026-10-15</td><td>决议 Q1、Q2、Q4、Q5、Q7、Q8、Q9：岗位与角色职责分工、外包字段与实名信息边界、通知渠道与到期预警、密码自助找回、考勤不纳入、权限可见范围、账号销号规则；新增 4.4.5 密码找回与重置、4.5.4 权限可见范围两节</td><td>仅 Q10 的等保等级与运维责任划分待确认</td></tr>
+      <tr data-page-node-id="RoSPUI1tjSytAXAOHT0t5h"><td colspan="4" style="color:var(--ink3); font-size:13px;" data-page-node-id="A57duoGXyB9LTym3HfoEcv">后续变更记录请在此追加。</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer data-page-node-id="szC05BZiOpWY8cOIXfF0U7">统一权限管理系统（IAM）需求规格说明书 · 骨架版 v0.3 · 2026-10-15</footer>
+
+</main>
+</div>
+</body>
+</html>
