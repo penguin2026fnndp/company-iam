@@ -29,7 +29,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
-                  "pm.test('17 枚权限', () => pm.expect(pm.response.json().data.permissions.length).to.eql(17));",
+                  "pm.test('18 枚权限', () => pm.expect(pm.response.json().data.permissions.length).to.eql(18));",
                   "pm.collectionVariables.set('adminToken', pm.response.json().data.sessionId);"
                 ]
               }
@@ -465,7 +465,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
-                  "pm.test('ADMIN 有 17 权限', () => { const a = pm.response.json().data.find(r => r.code === 'ADMIN'); pm.expect(a.permCount).to.eql(17); });"
+                  "pm.test('ADMIN 有 18 权限', () => { const a = pm.response.json().data.find(r => r.code === 'ADMIN'); pm.expect(a.permCount).to.eql(18); });"
                 ]
               }
             }
@@ -552,7 +552,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
-                  "pm.test('17 项权限', () => pm.expect(pm.response.json().data.permissions.length).to.eql(17));"
+                  "pm.test('18 项权限', () => pm.expect(pm.response.json().data.permissions.length).to.eql(18));"
                 ]
               }
             }
@@ -623,7 +623,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
-                  "pm.test('17 枚权限', () => pm.expect(pm.response.json().data.length).to.eql(17));"
+                  "pm.test('18 枚权限', () => pm.expect(pm.response.json().data.length).to.eql(18));"
                 ]
               }
             }
@@ -836,8 +836,391 @@
       ]
     },
     {
-      "name": "06 清理与锁定策略（放最后）",
+      "name": "06 申请审批闭环",
       "item": [
+        {
+          "name": "创建申请演示角色",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.collectionVariables.set('applyRoleId', pm.response.json().data.id);",
+                  "pm.collectionVariables.set('applyRoleCode', pm.response.json().data.code);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"code\":\"AP{{$timestamp}}\",\"name\":\"申请演示角色\",\"remark\":\"审批闭环\"}" },
+            "url": "{{baseUrl}}/api/roles"
+          }
+        },
+        {
+          "name": "F21 张伟提交角色申请",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('待审批', () => pm.expect(pm.response.json().data.status).to.eql(0));",
+                  "pm.collectionVariables.set('roleApplyId', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{mgrToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"targetType\":\"ROLE\",\"targetId\":{{applyRoleId}},\"reason\":\"负责季度报表核对，需要该角色\"}" },
+            "url": "{{baseUrl}}/api/applies"
+          }
+        },
+        {
+          "name": "F22 张伟我的申请",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "const id = pm.collectionVariables.get('roleApplyId');",
+                  "pm.test('含刚提交的单', () => pm.expect(pm.response.json().data.some(x => String(x.id) === String(id))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{mgrToken}}" }],
+            "url": "{{baseUrl}}/api/applies/mine"
+          }
+        },
+        {
+          "name": "F22 张伟看待办 → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=403', () => pm.expect(pm.response.json().code).to.eql(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{mgrToken}}" }],
+            "url": "{{baseUrl}}/api/applies?status=0"
+          }
+        },
+        {
+          "name": "F22 管理员待办（含本单）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "const id = pm.collectionVariables.get('roleApplyId');",
+                  "pm.test('含待办', () => pm.expect(pm.response.json().data.some(x => String(x.id) === String(id))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/applies?status=0"
+          }
+        },
+        {
+          "name": "F23 审批通过（角色）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('已通过', () => pm.expect(pm.response.json().data.status).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"action\":\"APPROVE\",\"comment\":\"同意\"}" },
+            "url": "{{baseUrl}}/api/applies/{{roleApplyId}}/decide"
+          }
+        },
+        {
+          "name": "张伟旧 token 失效 → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=401', () => pm.expect(pm.response.json().code).to.eql(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{mgrToken}}" }],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "F01 张伟重新登录（角色已生效）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "const codes = pm.response.json().data.roles.map(r => r.code);",
+                  "pm.test('多出新角色', () => pm.expect(codes).to.include(pm.collectionVariables.get('applyRoleCode')));",
+                  "pm.collectionVariables.set('mgrToken', pm.response.json().data.sessionId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000101\",\"password\":\"123456\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "F21 张伟提交权限申请（FIN 导出）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.collectionVariables.set('permApplyId', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{mgrToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"targetType\":\"PERM\",\"targetId\":16,\"reason\":\"需要导出财务报表给审计\"}" },
+            "url": "{{baseUrl}}/api/applies"
+          }
+        },
+        {
+          "name": "F23 审批通过（权限）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"action\":\"APPROVE\",\"comment\":\"同意，限本期审计使用\"}" },
+            "url": "{{baseUrl}}/api/applies/{{permApplyId}}/decide"
+          }
+        },
+        {
+          "name": "F01 张伟重新登录（9 枚权限）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('9 枚权限', () => pm.expect(pm.response.json().data.permissions.length).to.eql(9));",
+                  "pm.collectionVariables.set('mgrToken', pm.response.json().data.sessionId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000101\",\"password\":\"123456\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "R01 张伟报表（可导出）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('canExport=true', () => pm.expect(pm.response.json().data.canExport).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{mgrToken}}" }],
+            "url": "{{baseUrl}}/api/report/cost"
+          }
+        },
+        {
+          "name": "F21 张伟提交权限申请（待驳回）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.collectionVariables.set('rejectApplyId', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{mgrToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"targetType\":\"PERM\",\"targetId\":6,\"reason\":\"协助维护用户角色\"}" },
+            "url": "{{baseUrl}}/api/applies"
+          }
+        },
+        {
+          "name": "F23 驳回（附原因）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('已驳回', () => pm.expect(pm.response.json().data.status).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"action\":\"REJECT\",\"comment\":\"该权限与岗位职责不符\"}" },
+            "url": "{{baseUrl}}/api/applies/{{rejectApplyId}}/decide"
+          }
+        },
+        {
+          "name": "F22 张伟我的申请（含已驳回）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "const id = pm.collectionVariables.get('rejectApplyId');",
+                  "const row = pm.response.json().data.find(x => String(x.id) === String(id));",
+                  "pm.test('驳回记录存在', () => pm.expect(row.status).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{mgrToken}}" }],
+            "url": "{{baseUrl}}/api/applies/mine"
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 清理与锁定策略（放最后）",
+      "item": [
+        {
+          "name": "张伟角色改回部门主管",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"roleIds\":[2]}" },
+            "url": "{{baseUrl}}/api/users/2/roles"
+          }
+        },
+        {
+          "name": "删除申请演示角色",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/roles/{{applyRoleId}}"
+          }
+        },
         {
           "name": "李四角色改回普通员工",
           "event": [

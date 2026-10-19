@@ -8,6 +8,8 @@ CREATE DATABASE IF NOT EXISTS iam_rbac
 USE iam_rbac;
 
 SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS sys_permission_apply;
+DROP TABLE IF EXISTS sys_user_permission;
 DROP TABLE IF EXISTS sys_session;
 DROP TABLE IF EXISTS sys_user_role;
 DROP TABLE IF EXISTS sys_role_permission;
@@ -97,3 +99,34 @@ CREATE TABLE sys_session (
   KEY idx_session_expire (expire_at),
   CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES sys_user (id) ON DELETE CASCADE
 ) ENGINE=InnoDB COMMENT='会话';
+
+-- 7. 用户直接权限：审批通过后写入（例外授予）
+CREATE TABLE sys_user_permission (
+  user_id       BIGINT UNSIGNED NOT NULL,
+  permission_id BIGINT UNSIGNED NOT NULL,
+  apply_id      BIGINT UNSIGNED NULL COMMENT '来源申请单',
+  granted_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, permission_id),
+  KEY idx_up_perm (permission_id),
+  CONSTRAINT fk_up_user FOREIGN KEY (user_id) REFERENCES sys_user (id) ON DELETE CASCADE,
+  CONSTRAINT fk_up_perm FOREIGN KEY (permission_id) REFERENCES sys_permission (id) ON DELETE CASCADE
+) ENGINE=InnoDB COMMENT='用户直接权限（审批结果）';
+
+-- 8. 权限申请单
+CREATE TABLE sys_permission_apply (
+  id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  applicant_id    BIGINT UNSIGNED NOT NULL,
+  target_type     CHAR(4)         NOT NULL COMMENT 'ROLE / PERM',
+  target_id       BIGINT UNSIGNED NOT NULL COMMENT '角色 ID 或权限 ID',
+  apply_reason    VARCHAR(500)    NOT NULL,
+  status          TINYINT         NOT NULL DEFAULT 0 COMMENT '0待审批 1已通过 2已驳回',
+  approver_id     BIGINT UNSIGNED NULL,
+  approve_time    DATETIME        NULL,
+  approve_comment VARCHAR(255)    NULL,
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_apply_status (status, created_at),
+  KEY idx_apply_applicant (applicant_id),
+  CONSTRAINT fk_apply_user FOREIGN KEY (applicant_id) REFERENCES sys_user (id) ON DELETE CASCADE,
+  CONSTRAINT fk_apply_approver FOREIGN KEY (approver_id) REFERENCES sys_user (id) ON DELETE SET NULL
+) ENGINE=InnoDB COMMENT='权限申请单';

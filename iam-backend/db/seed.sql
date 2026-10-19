@@ -32,6 +32,9 @@ INSERT INTO sys_permission (id, sys_code, sys_name, module_name, func_code, func
   (16, 'FIN', '财务系统', '财务报表', 'FIN:RPT',   '财务报表', 'EXPORT',      'FIN:RPT:EXPORT',   1, 61),
   (17, 'PM',  '项目系统', '成本管理', 'PM:COST',   '成本报表', 'VIEW',        'PM:COST:VIEW',     1, 70);
 
+INSERT INTO sys_permission (id, sys_code, sys_name, module_name, func_code, func_name, action, perm_code, status, sort_no) VALUES
+  (18, 'IAM', '权限中心', '权限申请', 'APPLY', '权限申请', 'APPROVE', 'APPLY:APPROVE', 1, 80);
+
 INSERT INTO sys_user_role (user_id, role_id) VALUES
   (1, 1),
   (2, 2),

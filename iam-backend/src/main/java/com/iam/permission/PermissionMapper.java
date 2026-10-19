@@ -1,6 +1,7 @@
 package com.iam.permission;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
@@ -38,15 +39,22 @@ public interface PermissionMapper {
         public void setSortNo(Integer sortNo) { this.sortNo = sortNo; }
     }
 
-    /** 唯一的权限计算口径：用户 → 角色（启用）→ 角色权限 → 权限（启用） */
+    /** 权限计算口径：角色权限 ∪ 审批产生的直接权限（两者都是启用状态） */
     @Select("""
-            SELECT DISTINCT p.perm_code
-            FROM sys_user_role ur
-            JOIN sys_role r             ON r.id = ur.role_id AND r.status = 1
-            JOIN sys_role_permission rp ON rp.role_id = r.id
-            JOIN sys_permission p       ON p.id = rp.permission_id AND p.status = 1
-            WHERE ur.user_id = #{userId}
-            ORDER BY p.perm_code
+            SELECT DISTINCT t.perm_code FROM (
+                SELECT p.perm_code
+                FROM sys_user_role ur
+                JOIN sys_role r             ON r.id = ur.role_id AND r.status = 1
+                JOIN sys_role_permission rp ON rp.role_id = r.id
+                JOIN sys_permission p       ON p.id = rp.permission_id AND p.status = 1
+                WHERE ur.user_id = #{userId}
+                UNION
+                SELECT p.perm_code
+                FROM sys_user_permission up
+                JOIN sys_permission p ON p.id = up.permission_id AND p.status = 1
+                WHERE up.user_id = #{userId}
+            ) t
+            ORDER BY t.perm_code
             """)
     List<String> codesOf(@Param("userId") long userId);
 
@@ -75,4 +83,19 @@ public interface PermissionMapper {
 
     @Select("SELECT COUNT(*) FROM sys_permission WHERE id = #{id} AND status = 1")
     long countById(@Param("id") long id);
+
+    @Select("""
+            SELECT id, sys_code, sys_name, module_name, func_name, action, perm_code, sort_no
+            FROM sys_permission WHERE id = #{id} AND status = 1
+            """)
+    PermRow findById(@Param("id") long id);
+
+    @Select("SELECT COUNT(*) FROM sys_user_permission WHERE user_id = #{userId} AND permission_id = #{permId}")
+    long countDirect(@Param("userId") long userId, @Param("permId") long permId);
+
+    @Insert("""
+            INSERT INTO sys_user_permission (user_id, permission_id, apply_id)
+            VALUES (#{userId}, #{permId}, #{applyId})
+            """)
+    int addDirect(@Param("userId") long userId, @Param("permId") long permId, @Param("applyId") Long applyId);
 }

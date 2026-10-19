@@ -111,4 +111,7 @@ public interface UserMapper {
 
     @Insert("INSERT INTO sys_user_role (user_id, role_id) VALUES (#{userId}, #{roleId})")
     int addRole(@Param("userId") long userId, @Param("roleId") long roleId);
+
+    @Select("SELECT COUNT(*) FROM sys_user_role WHERE user_id = #{userId} AND role_id = #{roleId}")
+    long countRole(@Param("userId") long userId, @Param("roleId") long roleId);
 }
