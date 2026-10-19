@@ -1,0 +1,45 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  application:
+    name: iam-backend
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 库名固定为 iam_rbac；环境变量只用于覆盖连接串、账号与密码
+    url: ${IAM_RBAC_URL:jdbc:mysql://127.0.0.1:3306/iam_rbac?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${IAM_RBAC_USER:root}
+    password: ${IAM_RBAC_PASSWORD:Xiaobin060407!}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 3000
+  jackson:
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+  type-aliases-package: com.iam
+
+iam:
+  password:
+    initial: "123456"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+logging:
+  level:
+    root: info
+    com.iam: info

@@ -1,0 +1,46 @@
+server:
+  port: 8080
+  address: 127.0.0.1
+  tomcat:
+    threads:
+      max: 100
+
+spring:
+  application:
+    name: iam-backend
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/iam_rbac?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: iam
+    password: CHANGE_ME
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 3000
+  jackson:
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.iam
+  configuration:
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    root: info
+    com.iam: info
+  file:
+    name: /opt/iam/logs/iam.log
+  logback:
+    rollingpolicy:
+      max-file-size: 20MB
+      max-history: 14
+
+iam:
+  session:
+    # 会话到期时刻（本地时区），与 v0.6 一致
+    expire-at: "23:59:59"
+  password:
+    initial: "123456"

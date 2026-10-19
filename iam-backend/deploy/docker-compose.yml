@@ -1,0 +1,20 @@
+# 本地开发用：只起一个 MySQL 8，数据落在命名卷里
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: iam-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+08:00
+    ports:
+      - "3306:3306"
+    volumes:
+      - iam_mysql_data:/var/lib/mysql
+
+volumes:
+  iam_mysql_data:

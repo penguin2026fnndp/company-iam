@@ -1,0 +1,26 @@
+[Unit]
+Description=IAM RBAC0 Backend
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=iam
+Group=iam
+WorkingDirectory=/opt/iam
+ExecStart=/usr/bin/java -Xms256m -Xmx512m \
+  -Duser.timezone=Asia/Shanghai \
+  -Dfile.encoding=UTF-8 \
+  -jar /opt/iam/app.jar \
+  --spring.profiles.active=prod \
+  --spring.config.additional-location=/opt/iam/
+Restart=always
+RestartSec=5
+SuccessExitStatus=143
+StandardOutput=append:/opt/iam/logs/stdout.log
+StandardError=append:/opt/iam/logs/stderr.log
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

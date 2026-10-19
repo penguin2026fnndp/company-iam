@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IAM 项目计划 · 第一次检查（10/17–10/29）</title>
+<style>
+  :root{--bg:#f7f7f5;--card:#fff;--ink:#1f1f1e;--ink2:#5f5e5a;--ink3:#8a8880;--line:#e6e4de;--line2:#d3d1c7;
+    --blue:#185fa5;--blue-bg:#e6f1fb;--teal:#0f6e56;--teal-bg:#e1f5ee;--amber:#854f0b;--amber-bg:#faeeda;
+    --red:#a32d2d;--red-bg:#fcebeb;--gray:#f1efe8;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:30px 24px 80px}
+  header{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 32px;margin-bottom:18px}
+  header .eyebrow{font-size:12.5px;color:var(--blue)}
+  header h1{margin:6px 0 8px;font-size:25px;font-weight:500;letter-spacing:-.01em}
+  header p{margin:0;color:var(--ink2);font-size:14.5px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .meta span{font-size:12.5px;color:var(--ink2);background:var(--gray);border:1px solid var(--line);border-radius:99px;padding:3px 11px}
+  .meta span.ok{background:var(--teal-bg);border-color:#cbe8dd;color:var(--teal)}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 32px;margin-bottom:18px}
+  h2{font-size:18px;font-weight:500;margin:0 0 8px;padding-bottom:10px;border-bottom:1px solid var(--line);display:flex;gap:9px;align-items:baseline}
+  h2 .no{font-size:12.5px;color:var(--blue);font-weight:500}
+  h3{font-size:14.5px;font-weight:500;margin:20px 0 6px}
+  p{margin:7px 0}
+  ul,ol{margin:7px 0;padding-left:20px}
+  li{margin:3px 0}
+  table{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:13px}
+  th{text-align:left;font-weight:500;color:var(--ink2);background:#faf9f6;border-bottom:1px solid var(--line2);padding:7px 9px}
+  td{border-bottom:1px solid var(--line);padding:7px 9px;vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  code{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;background:var(--gray);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  .tag{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 6px;color:var(--ink2);white-space:nowrap}
+  .tag.g{color:var(--teal);background:var(--teal-bg);border-color:#cbe8dd}
+  .tag.a{color:var(--amber);background:var(--amber-bg);border-color:#ecd9b4}
+  .tag.r{color:var(--red);background:var(--red-bg);border-color:#eecaca}
+  .tag.b{color:var(--blue);background:var(--blue-bg);border-color:#c8e0f5}
+  .callout{border-left:3px solid var(--blue);background:#f8fafc;padding:9px 13px;margin:10px 0;font-size:13.5px;color:var(--ink2);border-radius:0 8px 8px 0}
+  .callout.warn{border-left-color:var(--amber);background:#fdf8ef}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fcfcfa}
+  .box h4{margin:0 0 6px;font-size:13px;font-weight:500;color:var(--ink2)}
+  .box ul{margin:0;padding-left:18px;font-size:12.5px;color:var(--ink2)}
+  footer{text-align:center;font-size:12.5px;color:var(--ink3);padding:6px 0}
+  @media (max-width:820px){.wrap{padding:14px 12px 48px}section{padding:18px 16px}.cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">项目计划 · 第一次检查</div>
+  <h1>IAM 第一次检查：原型 + API + 数据库 + 详细设计</h1>
+  <p>10 天窗口（10/17–10/26）完成四步交付，10/27–10/29 接受检查。第一次检查要求「原型界面 + 完整后端」，但不做前后端联调。</p>
+  <div class="meta">
+    <span>周期 2026-10-17 ~ 2026-10-29</span>
+    <span class="ok">范围：RBAC0</span>
+    <span>6 张表 · 22 个接口 · 8 个页面</span>
+    <span>默认 4 人分工</span>
+  </div>
+</header>
+
+<section>
+  <h2><span class="no">01</span>先把「完整」定义清楚</h2>
+  <p>「完整后端」不等于「前端能调通」。本次的口径是：<b>后端能独立启动、数据库能一键重建、22 个接口全部可用、鉴权真实生效</b>，用接口工具演示，不改前端一行代码。</p>
+  <table>
+    <thead><tr><th style="width:120px">交付项</th><th>完成的判定标准（DoD）</th><th style="width:130px">谁来验</th></tr></thead>
+    <tbody>
+      <tr><td>原型界面</td><td>登录 → 我的权限 → 403 → 角色矩阵 → 分配角色 → 重登生效，全程无断点；8 个页面可进入</td><td>全员彩排</td></tr>
+      <tr><td>数据库</td><td>6 张表 DDL + 种子数据 + 重置脚本；一条命令重建；外键/唯一索引齐全</td><td>数据负责人</td></tr>
+      <tr><td>接口</td><td>22 个接口全部实现，返回 <code>{code,data,message}</code>；未登录 401、无权限 403、重复编码 409</td><td>测试负责人</td></tr>
+      <tr><td>鉴权</td><td>会话表 + 拦截器；菜单/路由/接口三层同源；停用用户、改角色立刻使会话失效</td><td>后端 A</td></tr>
+      <tr><td>详细设计</td><td>F01–F20 每个功能一张「功能卡」：接口、Controller、Service、Mapper、入参、出参、权限码、用例</td><td>文档负责人</td></tr>
+      <tr><td>演示材料</td><td>5 分钟脚本 + Postman 集合 + 一键启动说明 + 录屏兜底</td><td>全体</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <b>明确不做：</b>审批、差量、例外、项目域、组织树、审计报表、角色继承（RBAC1）、约束（RBAC2）。这些在 v0.5/v0.6 里都有文字说明，检查时只用一句话带过，不展开演示。
+  </div>
+</section>
+
+<section>
+  <h2><span class="no">02</span>十天路线图</h2>
+  <table>
+    <thead><tr><th style="width:96px">日期</th><th style="width:150px">阶段</th><th>当天必须产出的东西</th><th style="width:110px">卡点</th></tr></thead>
+    <tbody>
+      <tr><td>10/17 六</td><td>冻结与定契约</td><td>范围冻结（v0.6）；<code>openapi.yaml</code> v0.1（22 个接口的路径、入参、出参、错误码）；仓库与分支建好</td><td>接口不定稿，后面全乱</td></tr>
+      <tr><td>10/18 日</td><td>数据库设计</td><td>ER 图 + 6 张表 DDL + 索引/外键 + 种子数据（3 账号 / 3 角色 / 17 权限）+ <code>reset.sql</code></td><td>表定稿后只许加不许改</td></tr>
+      <tr><td>10/19 一</td><td>后端骨架</td><td>Spring Boot 工程；统一返回、异常处理、会话拦截器；登录/登出/当前用户三个接口跑通</td><td>401/403 必须真的返回</td></tr>
+      <tr><td>10/20 二</td><td>用户域</td><td>用户列表/新增/修改/启停/重置密码/删除/查角色/分配角色（8 个）</td><td>停用与改角色要踢会话</td></tr>
+      <tr><td>10/21 三</td><td>角色域</td><td>角色列表/新增/修改/删除/详情 + 角色权限查询/保存（7 个）</td><td>删除前校验成员</td></tr>
+      <tr><td>10/22 四</td><td>判定链路</td><td>我的权限（三表关联）、菜单过滤、<code>/auth/me</code> 返回权限集合；权限目录（2 个）</td><td>只算一次，不缓存第二份</td></tr>
+      <tr><td>10/23 五</td><td>收口</td><td>报表接口（含导出权限判断）；22 个接口自测；Postman 集合 v1</td><td>全部返回统一结构</td></tr>
+      <tr><td>10/24 六</td><td>详细设计</td><td>F01–F20 功能卡；包结构与调用链图；接口文档与实现对齐校验</td><td>文档落后代码等于没写</td></tr>
+      <tr><td>10/25 日</td><td>缓冲</td><td>缺陷修复、边界用例（空列表、超长、重复编码、删除有成员的角色）</td><td>留出整天，不要排满</td></tr>
+      <tr><td>10/26 一</td><td>彩排</td><td>一键启动脚本、5 分钟演示脚本、录屏兜底、PPT 定稿</td><td>换一台机器跑一遍</td></tr>
+      <tr><td>10/27–29</td><td>检查</td><td>按脚本演示，不临场改代码</td><td>—</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <b>如果落后一天，按这个顺序砍：</b>报表导出判断 → 权限目录搜索 → 用户删除 → 角色删除。<b>不要砍</b>登录/会话、我的权限、角色权限保存、401/403——这四样是「RBAC0 成立」的证据。
+  </div>
+</section>
+
+<section>
+  <h2><span class="no">03</span>四步的顺序与依赖</h2>
+  <p>原型已经先行，所以后面三步不是串行，而是「接口定契约、数据库定结构、两边并行实现、最后用详细设计对齐」。</p>
+  <table>
+    <thead><tr><th style="width:110px">阶段</th><th style="width:220px">输入</th><th>输出</th><th style="width:150px">完成标准</th></tr></thead>
+    <tbody>
+      <tr><td>① 界面原型</td><td>v0.6 范围、权限码规范</td><td>8 个页面 + 路由守卫 + 403 + 演示脚本</td><td>路径可点通（已完成）</td></tr>
+      <tr><td>② API 设计</td><td>F01–F20 功能清单</td><td><code>openapi.yaml</code>：22 个接口、统一返回、错误码、鉴权头</td><td>前端 mock 与后端实现都按它写</td></tr>
+      <tr><td>③ 数据库设计</td><td>接口里的数据结构</td><td>6 张表 DDL、索引、外键、种子与重置脚本</td><td>一条命令重建，数据可复现</td></tr>
+      <tr><td>④ 详细设计</td><td>②③ + 面向功能约束</td><td>F01–F20 功能卡：Controller/Service/Mapper/入参/出参/权限码/用例</td><td>每张卡能直接对着写代码</td></tr>
+    </tbody>
+  </table>
+  <div class="cols" style="margin-top:12px">
+    <div class="box">
+      <h4>为什么接口在数据库之前</h4>
+      <ul>
+        <li>接口描述“系统对外承诺什么”，表结构是它的实现细节</li>
+        <li>先定接口，表结构只需支撑这些字段，避免建了用不上的表</li>
+        <li>前端 mock 已经在按接口字段命名，反过来会改两次</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h4>但表结构要先于编码</h4>
+      <ul>
+        <li>10/18 把 DDL 定稿，后端 10/19 才能直接写 Mapper</li>
+        <li>之后只允许加字段、加索引，不允许改语义</li>
+        <li>变更走 <code>db/migration/V*.sql</code>，不手改库</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="no">04</span>分工（默认 4 人）</h2>
+  <table>
+    <thead><tr><th style="width:96px">角色</th><th style="width:210px">负责范围</th><th>关键产出</th><th style="width:120px">每天同步</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>后端 A</b><br><span class="tag b">认证 + 用户</span></td>
+        <td>登录/登出/会话/拦截器；用户域 8 个接口；401/403</td>
+        <td><code>auth/*</code>、<code>user/*</code>、<code>AuthInterceptor</code>、<code>Result</code>、<code>BizException</code></td>
+        <td>接口自测截图</td>
+      </tr>
+      <tr>
+        <td><b>后端 B</b><br><span class="tag b">角色 + 权限</span></td>
+        <td>角色域 7 个接口；我的权限与菜单；权限目录；报表</td>
+        <td><code>role/*</code>、<code>permission/*</code>、<code>report/*</code>、三表关联 SQL</td>
+        <td>接口自测截图</td>
+      </tr>
+      <tr>
+        <td><b>数据与测试</b><br><span class="tag a">DDL + 验收</span></td>
+        <td>表结构、索引、种子与重置；Postman 集合；一键启动脚本；环境</td>
+        <td><code>schema.sql</code>、<code>seed.sql</code>、<code>reset.sql</code>、<code>postman_collection.json</code>、测试报告</td>
+        <td>用例通过率</td>
+      </tr>
+      <tr>
+        <td><b>前端与文档</b><br><span class="tag g">原型 + 交付</span></td>
+        <td>原型收尾；OpenAPI 校对；F01–F20 功能卡汇总；PPT 与演示脚本</td>
+        <td>原型 v0.6、<code>openapi.yaml</code>、详细设计文档、演示稿</td>
+        <td>文档与代码差异清单</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>如果只有 3 人</h3>
+  <ul>
+    <li>把「数据与测试」拆给后端 A（DDL + 种子）和后端 B（Postman 集合）。</li>
+    <li>前端与文档不变——文档不能省，检查时老师最先翻的是这一本。</li>
+    <li>砍掉报表接口的导出判断，只保留查看，省半天。</li>
+  </ul>
+  <h3>接口归属（避免两人改同一个文件）</h3>
+  <table>
+    <thead><tr><th style="width:130px">模块</th><th style="width:70px">数量</th><th>接口</th><th style="width:90px">归属</th></tr></thead>
+    <tbody>
+      <tr><td>认证</td><td>3</td><td>login、logout、me</td><td>后端 A</td></tr>
+      <tr><td>用户</td><td>8</td><td>list、create、update、status、password、delete、get roles、set roles</td><td>后端 A</td></tr>
+      <tr><td>角色</td><td>5</td><td>list、create、update、delete、detail</td><td>后端 B</td></tr>
+      <tr><td>角色权限</td><td>2</td><td>get role perms、set role perms</td><td>后端 B</td></tr>
+      <tr><td>权限目录</td><td>2</td><td>list permissions、list systems</td><td>后端 B</td></tr>
+      <tr><td>我的权限 / 菜单</td><td>1</td><td>me/permissions（或并入 /auth/me）</td><td>后端 B</td></tr>
+      <tr><td>报表</td><td>1</td><td>report（含导出权限判断）</td><td>后端 B</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2><span class="no">05</span>详细设计怎么「分解」</h2>
+  <p>v0.6 定的是面向功能实现：<b>一个功能一条链</b>，不做领域实体、继承、多态。所以分解的单位是「功能编号 F01–F20」，不是「实体」。</p>
+  <h3>包结构（按功能域分，不按层分）</h3>
+  <div class="box" style="font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.9">
+com.iam<br>
+├── common&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Result / BizException / GlobalHandler / AuthInterceptor / SessionContext<br>
+├── auth&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AuthController / AuthService / SessionMapper / dto/{LoginReq,MeResp}<br>
+├── user&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UserController / UserService / UserMapper / dto/{UserReq,UserResp,RoleAssignReq}<br>
+├── role&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RoleController / RoleService / RoleMapper / dto/{RoleReq,PermAssignReq}<br>
+├── permission&nbsp;&nbsp;PermissionController / PermissionService / PermissionMapper<br>
+└── report&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ReportController / ReportService / ReportMapper
+  </div>
+  <h3>每个功能一张「功能卡」</h3>
+  <table>
+    <thead><tr><th style="width:120px">字段</th><th>填写要求</th></tr></thead>
+    <tbody>
+      <tr><td>功能编号 / 名称</td><td>F05 新增用户</td></tr>
+      <tr><td>接口</td><td><code>POST /api/users</code>，权限码 <code>USER:ADD</code></td></tr>
+      <tr><td>入参 / 校验</td><td>字段、类型、必填、长度、唯一性；错误码</td></tr>
+      <tr><td>出参</td><td>成功返回什么；空值怎么表示</td></tr>
+      <tr><td>Controller</td><td>方法签名 + 注解（权限码）</td></tr>
+      <tr><td>Service</td><td>业务规则：账号唯一、初始密码 123456、创建后无角色</td></tr>
+      <tr><td>Mapper / SQL</td><td>表名、关键 SQL、影响行数</td></tr>
+      <tr><td>验收用例</td><td>正常 + 至少两个异常（重复账号、缺字段）</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <b>写法建议：</b>每个功能卡不超过一页，写完直接能照着敲代码。20 张卡 ≈ 20 页，正好是详细设计的体量；不要写成 60 页的“架构散文”。
+  </div>
+</section>
+
+<section>
+  <h2><span class="no">06</span>协作规则（防止并行打架）</h2>
+  <ul>
+    <li><b>契约唯一真源：</b>接口字段只认 <code>openapi.yaml</code>；谁要改字段，先改契约，再改两边代码，PR 里附一句“改契约”。</li>
+    <li><b>DDL 独占：</b>只有数据负责人能改 <code>schema.sql</code>；其他人提变更单，不直接改库。</li>
+    <li><b>公共类先合：</b>10/19 上午先把 <code>Result / BizException / AuthInterceptor</code> 合进主干，两个人再分头写，否则各写一套返回结构。</li>
+    <li><b>分支与合并：</b><code>feat/auth</code>、<code>feat/user</code>、<code>feat/role</code>、<code>docs/design</code>；每天 18:00 前合并一次，避免最后一天大合并。</li>
+    <li><b>每日 15 分钟站会：</b>昨天完成 / 今天计划 / 阻塞点；只同步这三件事。</li>
+    <li><b>验收口径写在仓库里：</b><code>docs/acceptance.md</code> 列 6 条 DoD，谁都能对照检查。</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="no">07</span>风险与兜底</h2>
+  <table>
+    <thead><tr><th style="width:200px">风险</th><th style="width:70px">概率</th><th>应对</th></tr></thead>
+    <tbody>
+      <tr><td>后端“完整”被理解成要联调</td><td>中</td><td>开场先声明：本次按 v0.6 口径，前端用 mock 演示、后端用 Postman 演示，两边不联调；把两张架构图分开讲。</td></tr>
+      <tr><td>接口与实现漂移，文档对不上</td><td>高</td><td>10/24 做一次“文档 vs 代码”逐条核对，差异记在 <code>docs/design-diff.md</code>，当天修完。</td></tr>
+      <tr><td>最后一天环境起不来</td><td>中</td><td>10/26 换一台干净机器跑一键启动；再录一段 3 分钟视频兜底。</td></tr>
+      <tr><td>两人共用一张表写 SQL</td><td>高</td><td>DDL 独占 + Mapper 分域（user/role/permission 三个 Mapper 文件互不重叠）。</td></tr>
+      <tr><td>演示数据被前一天演练改坏</td><td>高</td><td>演示前执行 <code>reset.sql</code>；前端执行 <code>Store.reset()</code> 后刷新。</td></tr>
+      <tr><td>被问“为什么没有审批流”</td><td>高</td><td>一句话：第一次检查只看 RBAC0；审批在 v0.5 已设计，二期实现。不展开。</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2><span class="no">08</span>检查当天的三条演示线</h2>
+  <ol>
+    <li><b>界面线（3 分钟）</b>：李四登录 → 只有“我的权限” → 输 <code>#/users</code> 出 403 → 管理员登录 → 角色矩阵勾“财务报表查看/导出” → 给李四追加角色 → 李四重登菜单多一项。</li>
+    <li><b>接口线（2 分钟）</b>：Postman 依次调 登录 → <code>/auth/me</code>（看权限集合）→ 用李四的会话调 <code>GET /api/users</code>（403）→ 加角色后再调 <code>/auth/me</code>（权限变多）。</li>
+    <li><b>设计线（2 分钟）</b>：6 张表 ER 图 → 三表关联那条 SQL → 一张功能卡（F05 新增用户）→ 22 个接口清单。</li>
+  </ol>
+  <div class="callout warn">
+    <b>不要做的事：</b>现场改代码、现场装环境、现场导数据、现场解释“这个本来要做但没做”。所有演示动作在 10/26 彩排时定死。
+  </div>
+</section>
+
+<footer>IAM 项目计划 · 第一次检查 · 2026-10-17</footer>
+</div>
+</body>
+</html>

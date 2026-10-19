@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>统一权限中心 · RBAC0 可交互原型 v0.6</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="rail">
+    <div class="brand">
+      <div class="mark">权</div>
+      <div>
+        <div class="b-name">统一权限中心</div>
+        <div class="b-sub">市政公司 · RBAC0 原型 v0.6</div>
+      </div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="rail-foot">
+      第一次检查范围：RBAC0<br>
+      权限由角色实时计算，数据存 localStorage
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="scope">
+        <span class="scope-k">当前登录</span>
+        <span class="who-role" id="whoRole"></span>
+      </div>
+      <div class="top-right">
+        <span class="chip" id="whoName">—</span>
+        <span class="chip">内网 10.12.3.44</span>
+        <span class="chip" id="sessChip">会话至 23:59</span>
+        <button class="btn sm" id="logout" data-act="logout">退出登录</button>
+      </div>
+    </header>
+    <div class="viewport" id="view"></div>
+  </div>
+</div>
+<script src="js/mock-data.js"></script>
+<script src="js/store.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

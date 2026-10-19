@@ -1,0 +1,8 @@
+target/
+classes/
+tools-out/
+lib-off/
+.idea/
+*.iml
+*.log
+.DS_Store

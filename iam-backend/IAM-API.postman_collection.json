@@ -1,0 +1,1063 @@
+{
+  "info": {
+    "name": "IAM API 全链路验收（RBAC0）",
+    "description": "配套 docs/04-详细设计.md。运行前：① 执行 db/reset.sql；② 启动后端（8080）；③ 按文件夹顺序运行。最后一个文件夹会锁定 SG000101 十五分钟，请放在最后。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8080" },
+    { "key": "adminToken", "value": "" },
+    { "key": "liToken", "value": "" },
+    { "key": "mgrToken", "value": "" },
+    { "key": "newUserId", "value": "" },
+    { "key": "newAccount", "value": "" },
+    { "key": "newRoleId", "value": "" },
+    { "key": "newRoleCode", "value": "" },
+    { "key": "finViewId", "value": "" },
+    { "key": "finExportId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 认证",
+      "item": [
+        {
+          "name": "F01 登录（管理员）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('17 枚权限', () => pm.expect(pm.response.json().data.permissions.length).to.eql(17));",
+                  "pm.collectionVariables.set('adminToken', pm.response.json().data.sessionId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG900001\",\"password\":\"123456\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "F01 登录（李四）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('2 枚权限', () => pm.expect(pm.response.json().data.permissions.length).to.eql(2));",
+                  "pm.collectionVariables.set('liToken', pm.response.json().data.sessionId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000102\",\"password\":\"123456\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "F01 登录（张伟）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.collectionVariables.set('mgrToken', pm.response.json().data.sessionId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000101\",\"password\":\"123456\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "F03 当前用户（管理员）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('5 个菜单', () => pm.expect(pm.response.json().data.menus.length).to.eql(5));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "F01 登录（错误密码 → 401）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=401', () => pm.expect(pm.response.json().code).to.eql(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000102\",\"password\":\"wrong-pass\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 用户管理",
+      "item": [
+        {
+          "name": "F04 用户列表（管理员）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('至少 3 条', () => pm.expect(pm.response.json().data.total).to.be.at.least(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/users?page=1&size=10"
+          }
+        },
+        {
+          "name": "F04 用户列表（李四 → 403）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=403', () => pm.expect(pm.response.json().code).to.eql(403));",
+                  "pm.test('requiredPerm=USER:VIEW', () => pm.expect(pm.response.json().data.requiredPerm).to.eql('USER:VIEW'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{liToken}}" }],
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "F05 用户详情",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('李四', () => pm.expect(pm.response.json().data.account).to.eql('SG000102'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/users/3"
+          }
+        },
+        {
+          "name": "F05 用户不存在 → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=404', () => pm.expect(pm.response.json().code).to.eql(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/users/9999"
+          }
+        },
+        {
+          "name": "F06 新增用户",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('无角色', () => pm.expect(pm.response.json().data.permCount).to.eql(0));",
+                  "pm.collectionVariables.set('newUserId', pm.response.json().data.id);",
+                  "pm.collectionVariables.set('newAccount', pm.response.json().data.account);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG{{$timestamp}}\",\"name\":\"王五\",\"phone\":\"13800000103\"}" },
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "F06 重复工号 → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=409', () => pm.expect(pm.response.json().code).to.eql(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"account\":\"{{newAccount}}\",\"name\":\"重复\",\"phone\":\"\"}" },
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "F07 修改用户",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('姓名已改', () => pm.expect(pm.response.json().data.name).to.eql('王五改'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"name\":\"王五改\",\"phone\":\"13900000000\"}" },
+            "url": "{{baseUrl}}/api/users/{{newUserId}}"
+          }
+        },
+        {
+          "name": "F11 查看用户角色",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('返回角色数组', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/users/{{newUserId}}/roles"
+          }
+        },
+        {
+          "name": "F11 用户不存在 → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=404', () => pm.expect(pm.response.json().code).to.eql(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/users/9999/roles"
+          }
+        },
+        {
+          "name": "F12 非法 roleId → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=400', () => pm.expect(pm.response.json().code).to.eql(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"roleIds\":[9999]}" },
+            "url": "{{baseUrl}}/api/users/{{newUserId}}/roles"
+          }
+        },
+        {
+          "name": "F12 分配普通员工",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"roleIds\":[3]}" },
+            "url": "{{baseUrl}}/api/users/{{newUserId}}/roles"
+          }
+        },
+        {
+          "name": "F08 停用自己 → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=400', () => pm.expect(pm.response.json().code).to.eql(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"status\":0}" },
+            "url": "{{baseUrl}}/api/users/1/status"
+          }
+        },
+        {
+          "name": "F08 停用新用户",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"status\":0}" },
+            "url": "{{baseUrl}}/api/users/{{newUserId}}/status"
+          }
+        },
+        {
+          "name": "F09 重置新用户密码",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/users/{{newUserId}}/password"
+          }
+        },
+        {
+          "name": "F10 删除自己 → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=400', () => pm.expect(pm.response.json().code).to.eql(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/users/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 角色管理",
+      "item": [
+        {
+          "name": "F13 角色列表",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('ADMIN 有 17 权限', () => { const a = pm.response.json().data.find(r => r.code === 'ADMIN'); pm.expect(a.permCount).to.eql(17); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/roles"
+          }
+        },
+        {
+          "name": "F15 新增角色",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.collectionVariables.set('newRoleId', pm.response.json().data.id);",
+                  "pm.collectionVariables.set('newRoleCode', pm.response.json().data.code);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"code\":\"TC{{$timestamp}}\",\"name\":\"测试角色\",\"remark\":\"Postman 自动化\"}" },
+            "url": "{{baseUrl}}/api/roles"
+          }
+        },
+        {
+          "name": "F15 重复编码 → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=409', () => pm.expect(pm.response.json().code).to.eql(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"code\":\"{{newRoleCode}}\",\"name\":\"重复角色\",\"remark\":\"\"}" },
+            "url": "{{baseUrl}}/api/roles"
+          }
+        },
+        {
+          "name": "F14 角色详情",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/roles/{{newRoleId}}"
+          }
+        },
+        {
+          "name": "F18 角色权限",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('17 项权限', () => pm.expect(pm.response.json().data.permissions.length).to.eql(17));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/roles/{{newRoleId}}/permissions"
+          }
+        },
+        {
+          "name": "F19 非法 permissionId → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=400', () => pm.expect(pm.response.json().code).to.eql(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"permissionIds\":[9999]}" },
+            "url": "{{baseUrl}}/api/roles/{{newRoleId}}/permissions"
+          }
+        },
+        {
+          "name": "F16 修改角色",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"name\":\"测试角色改\",\"remark\":\"已修改\",\"status\":1}" },
+            "url": "{{baseUrl}}/api/roles/{{newRoleId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 权限目录",
+      "item": [
+        {
+          "name": "F20 权限列表",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('17 枚权限', () => pm.expect(pm.response.json().data.length).to.eql(17));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/permissions"
+          }
+        },
+        {
+          "name": "F20 权限列表（FIN，存 id）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "const list = pm.response.json().data;",
+                  "const v = list.find(x => x.permCode === 'FIN:RPT:VIEW');",
+                  "const e = list.find(x => x.permCode === 'FIN:RPT:EXPORT');",
+                  "pm.collectionVariables.set('finViewId', v ? v.id : '');",
+                  "pm.collectionVariables.set('finExportId', e ? e.id : '');",
+                  "pm.test('找到两条 FIN 权限', () => { pm.expect(v).to.not.be.undefined; pm.expect(e).to.not.be.undefined; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/permissions?sysCode=FIN"
+          }
+        },
+        {
+          "name": "F20 系统下拉",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('含 IAM', () => { const c = pm.response.json().data.map(s => s.sysCode); pm.expect(c).to.include('IAM'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/permissions/systems"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 权限生效闭环",
+      "item": [
+        {
+          "name": "F19 保存角色权限（财务报表 查看/导出）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"permissionIds\":[{{finViewId}},{{finExportId}}]}" },
+            "url": "{{baseUrl}}/api/roles/{{newRoleId}}/permissions"
+          }
+        },
+        {
+          "name": "F12 把新角色分给李四",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"roleIds\":[3,{{newRoleId}}]}" },
+            "url": "{{baseUrl}}/api/users/3/roles"
+          }
+        },
+        {
+          "name": "旧 token 失效 → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=401', () => pm.expect(pm.response.json().code).to.eql(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{liToken}}" }],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "F01 李四重新登录",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('4 枚权限', () => pm.expect(pm.response.json().data.permissions.length).to.eql(4));",
+                  "pm.collectionVariables.set('liToken', pm.response.json().data.sessionId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000102\",\"password\":\"123456\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "F03 李四当前用户（菜单含财务报表）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "const menus = pm.response.json().data.menus.map(m => m.path);",
+                  "pm.test('含 /report', () => pm.expect(menus).to.include('/report'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{liToken}}" }],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "R01 财务报表（李四，可导出）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('5 行', () => pm.expect(pm.response.json().data.rows.length).to.eql(5));",
+                  "pm.test('canExport=true', () => pm.expect(pm.response.json().data.canExport).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{liToken}}" }],
+            "url": "{{baseUrl}}/api/report/cost"
+          }
+        },
+        {
+          "name": "R01 财务报表（张伟，仅查看）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));",
+                  "pm.test('canExport=false', () => pm.expect(pm.response.json().data.canExport).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{mgrToken}}" }],
+            "url": "{{baseUrl}}/api/report/cost"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 清理与锁定策略（放最后）",
+      "item": [
+        {
+          "name": "李四角色改回普通员工",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"roleIds\":[3]}" },
+            "url": "{{baseUrl}}/api/users/3/roles"
+          }
+        },
+        {
+          "name": "F17 删除有成员的角色 → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=409', () => pm.expect(pm.response.json().code).to.eql(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/roles/3"
+          }
+        },
+        {
+          "name": "F17 删除测试角色",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/roles/{{newRoleId}}"
+          }
+        },
+        {
+          "name": "F10 删除测试用户",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/users/{{newUserId}}"
+          }
+        },
+        {
+          "name": "F02 登出（管理员）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=0', () => pm.expect(pm.response.json().code).to.eql(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/auth/logout"
+          }
+        },
+        {
+          "name": "锁定 1/5 错误密码 → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=401', () => pm.expect(pm.response.json().code).to.eql(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000101\",\"password\":\"bad-1\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "锁定 2/5 错误密码 → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=401', () => pm.expect(pm.response.json().code).to.eql(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000101\",\"password\":\"bad-2\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "锁定 3/5 错误密码 → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=401', () => pm.expect(pm.response.json().code).to.eql(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000101\",\"password\":\"bad-3\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "锁定 4/5 错误密码 → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=401', () => pm.expect(pm.response.json().code).to.eql(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000101\",\"password\":\"bad-4\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "锁定 5/5 错误密码 → 429",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=429', () => pm.expect(pm.response.json().code).to.eql(429));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000101\",\"password\":\"bad-5\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "锁定期间正确密码 → 429",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('code=429', () => pm.expect(pm.response.json().code).to.eql(429));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"account\":\"SG000101\",\"password\":\"123456\"}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        }
+      ]
+    }
+  ]
+}

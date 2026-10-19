@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>统一权限管理系统（IAM）需求规格说明书 · v0.5.1</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#fff; --ink:#1f1f1e; --ink2:#5f5e5a; --ink3:#8a8880;
+    --line:#e6e4de; --line2:#d3d1c7;
+    --blue:#185fa5; --blue-bg:#e6f1fb; --blue-ink:#0c447c;
+    --teal:#0f6e56; --teal-bg:#e1f5ee;
+    --purple:#534ab7; --purple-bg:#eeedfe;
+    --amber:#854f0b; --amber-bg:#faeeda;
+    --red:#a32d2d; --red-bg:#fcebeb;
+    --gray:#f1efe8;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15px;line-height:1.72;-webkit-font-smoothing:antialiased;
+  }
+  .layout{display:flex;align-items:flex-start;max-width:1240px;margin:0 auto;gap:30px;padding:30px 24px 80px}
+  nav.toc{position:sticky;top:30px;flex:0 0 232px;width:232px;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:14px 12px;font-size:13px;max-height:calc(100vh - 60px);overflow:auto}
+  nav.toc h4{margin:0 0 8px;font-size:12px;font-weight:500;color:var(--ink3);letter-spacing:.05em}
+  nav.toc a{display:block;padding:4px 8px;color:var(--ink2);text-decoration:none;border-radius:6px}
+  nav.toc a:hover{background:var(--gray)}
+  nav.toc a.sub{padding-left:20px;color:var(--ink3);font-size:12.5px}
+  main{flex:1 1 auto;min-width:0}
+  header.doc{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:30px 34px;margin-bottom:18px}
+  header.doc .eyebrow{font-size:12.5px;color:var(--blue)}
+  header.doc h1{margin:6px 0 8px;font-size:26px;font-weight:500;letter-spacing:-.01em}
+  header.doc p{margin:0 0 16px;color:var(--ink2);font-size:14.5px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px}
+  .meta span{font-size:12.5px;color:var(--ink2);background:var(--gray);border:1px solid var(--line);border-radius:99px;padding:3px 11px}
+  .meta span.ok{background:var(--teal-bg);border-color:#cbe8dd;color:var(--teal)}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 34px;margin-bottom:18px}
+  h2{font-size:19px;font-weight:500;margin:0 0 6px;padding-bottom:11px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:baseline}
+  h2 .no{font-size:13px;color:var(--blue);font-weight:500}
+  h3{font-size:15.5px;font-weight:500;margin:22px 0 6px}
+  h4{font-size:13.5px;font-weight:500;margin:16px 0 5px;color:var(--ink2)}
+  p{margin:7px 0}
+  ul,ol{margin:7px 0;padding-left:21px}
+  li{margin:3px 0}
+  table{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:13.5px}
+  th{text-align:left;font-weight:500;color:var(--ink2);background:#faf9f6;border-bottom:1px solid var(--line2);padding:7px 9px}
+  td{border-bottom:1px solid var(--line);padding:7px 9px;vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  code{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:12px;background:var(--gray);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  .chg{display:inline-block;font-size:11px;line-height:1.6;padding:0 6px;border-radius:4px;background:var(--blue-bg);color:var(--blue-ink);border:1px solid #c8e0f5;vertical-align:2px;margin-left:4px}
+  .chg.mod{background:var(--amber-bg);color:var(--amber);border-color:#ecd9b4}
+  .chg.del{background:var(--red-bg);color:var(--red);border-color:#eecaca}
+  .callout{border-left:3px solid var(--blue);background:#f8fafc;padding:9px 13px;margin:10px 0;font-size:13.5px;color:var(--ink2);border-radius:0 8px 8px 0}
+  .callout.warn{border-left-color:var(--amber);background:#fdf8ef}
+  .callout b{color:var(--ink);font-weight:500}
+  .formula{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:12.5px;background:#fbfbf9;
+    border:1px dashed var(--line2);border-radius:8px;padding:11px 13px;line-height:1.9;overflow-x:auto}
+  .tag{display:inline-block;font-size:11.5px;border:1px solid var(--line);border-radius:4px;padding:0 6px;color:var(--ink2)}
+  .tag.g{color:var(--teal);background:var(--teal-bg);border-color:#cbe8dd}
+  .tag.a{color:var(--amber);background:var(--amber-bg);border-color:#ecd9b4}
+  .tag.r{color:var(--red);background:var(--red-bg);border-color:#eecaca}
+  .tag.p{color:var(--purple);background:var(--purple-bg);border-color:#d6d3f4}
+  footer{text-align:center;font-size:12.5px;color:var(--ink3);padding:6px 0}
+  @media (max-width:900px){
+    .layout{display:block;padding:14px 12px 48px}
+    nav.toc{position:static;width:auto;margin-bottom:14px;max-height:none}
+    section{padding:20px 16px} header.doc{padding:22px 18px}
+    header.doc h1{font-size:22px}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc">
+  <h4>目录</h4>
+  <a href="#s0">00 本版变更要点</a>
+  <a href="#s1">01 概述</a>
+  <a href="#s2">02 主体与角色模型</a>
+  <a href="#s3">03 授权模型</a>
+  <a href="#s4">04 账号与认证</a>
+  <a href="#s5">05 申请与审批</a>
+  <a href="#s6">06 审计</a>
+  <a href="#s7">07 数据模型</a>
+  <a href="#s8">08 非功能需求</a>
+  <a href="#s9">09 决议清单</a>
+  <a href="#s10">10 变更记录</a>
+  <a href="#s11">11 数据现状与缺口</a>
+</nav>
+<main>
+
+<header class="doc">
+  <div class="eyebrow">需求规格说明书 · v0.5.1</div>
+  <h1>统一权限管理系统（IAM）</h1>
+  <p>面向 10,000 名内部员工与数十个外部实施团队的身份与权限管理平台：内部员工按"岗位 → 角色模板 → 功能点 × 操作"授权，外包团队按"项目 → 项目角色 → 项目资源"授权。</p>
+  <div class="meta">
+    <span>版本 v0.5.1</span><span>阶段：需求分析（模型收口）</span>
+    <span class="ok">状态：待评审</span><span>更新日期：2026-10-17</span>
+    <span>数据依据：员工表 / 部门表 / 权限清单</span>
+  </div>
+</header>
+
+<section id="s0">
+  <h2><span class="no">00</span>本版变更要点</h2>
+  <p>v0.5 依据三张真实数据表重做了权限模型。v0.4 及以前"岗位 1:1 角色、功能点有/无"的假设与实际数据不符，本版起以数据为准。</p>
+  <table>
+    <thead><tr><th style="width:120px">变更点</th><th>结论</th><th style="width:130px">影响章节</th></tr></thead>
+    <tbody>
+      <tr><td>角色模型</td><td>角色统一为权限清单中的 5 个模板；54 个岗位通过映射表落入模板，不再为每个岗位建角色</td><td>02、03、07</td></tr>
+      <tr><td>权限粒度</td><td>授权单元 = 功能点 × 操作（查看 / 新增 / 编辑 / 审批 / 导出），另带数据范围（本人 / 本部门 / 全公司）</td><td>03、07</td></tr>
+      <tr><td>组织差异</td><td>差量由"分公司 × 岗位"改为三级：模板基线 → 分公司差量 → 部门差量；同岗位跨部门差异用部门差量解决</td><td>03</td></tr>
+      <tr><td>主体区分</td><td>账号增加 <code>UserSource</code>（内部 / 外部 / 外包）；外包人员不进人事表</td><td>02、04、07</td></tr>
+      <tr><td>外包授权</td><td>外包权限直接绑定项目：项目 → 项目角色 → 项目资源，不挂组织架构</td><td>03、05</td></tr>
+      <tr><td>外包生命周期</td><td>账号必填有效期且与项目周期绑定；项目结束或人员退出，账号立即失效</td><td>04</td></tr>
+      <tr><td>数据缺口</td><td>明确 5 项现有数据缺口与补齐方案（见 11 章）</td><td>11</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s1">
+  <h2><span class="no">01</span>概述</h2>
+  <h3>1.1 建设背景</h3>
+  <p>公司现有 10,000 名员工、10 个分公司、111 个部门、54 个岗位，纳管 18 个业务系统、359 个功能点。各系统长期各自维护账号与权限，存在账号分散、人员变动权限不同步、授权无统一记录、调整依赖人工四类问题。</p>
+  <p>与此同时，公司还有数十个软件项目由外部实施团队承接。这些团队不在人事名册内，却需要访问代码库、测试环境和脱敏数据，其权限边界与生命周期必须与项目绑定，不能沿用内部员工的组织模型。</p>
+
+  <h3>1.2 建设目标</h3>
+  <ul>
+    <li><b>一个账号：</b>内部员工一个账号通行全部已接入系统；外部与外包人员按项目单独开户。</li>
+    <li><b>一处授权：</b>内部按"岗位 → 角色模板 → 功能点 × 操作"授权，外包按"项目 → 资源"授权。</li>
+    <li><b>一条流程：</b>申请与审批在 IAM 内闭环，审批通过自动生效。</li>
+    <li><b>一本明白账：</b>授权、变更、登录、项目成员进出全部可追溯。</li>
+  </ul>
+
+  <h3>1.3 范围边界</h3>
+  <table>
+    <thead><tr><th style="width:100px">范围</th><th style="width:200px">内容</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>范围内</td><td>IAM 自身开发与交付</td><td>账号、组织、认证、授权、审批、审计全部模块真实实现</td></tr>
+      <tr><td>范围内</td><td>18 个系统的档案与 359 个功能点</td><td>作为授权对象登记，不改造业务系统</td></tr>
+      <tr><td>范围内</td><td>外包项目与项目资源管理</td><td>项目的账号、角色、资源范围、有效期由 IAM 管理</td></tr>
+      <tr><td>范围外</td><td>业务系统自身改造与真实对接</td><td>接口按 OIDC / OAuth2 预留</td></tr>
+      <tr><td>范围外</td><td>OA 系统建设</td><td>OA 视为已存在，仅约定集成</td></tr>
+      <tr><td>范围外</td><td>考勤、门禁等硬件身份场景</td><td>考勤系统作为接入方使用统一认证</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.4 建设原则</h3>
+  <ul>
+    <li>单一事实来源：人的信息以 HR 为准，权限配置以 IAM 为准；外部与外包人员不写入人事表。</li>
+    <li>默认最小权限：内部员工入职只有岗位模板权限；外包只有项目资源范围。</li>
+    <li>职责分离：配置权、授权权、审计权三权分立，不设超级管理员。</li>
+    <li>规则可解释：审批人、生效权限、失效清单都必须能说明计算依据。</li>
+  </ul>
+</section>
+
+<section id="s2">
+  <h2><span class="no">02</span>主体与角色模型</h2>
+
+  <h3>2.1 三类主体 <span class="chg">v0.5 新增</span></h3>
+  <p>账号表用 <code>UserSource</code> 区分来源。三类主体走两条完全不同的授权路径，互不混用。</p>
+  <table>
+    <thead><tr><th style="width:80px">类型</th><th style="width:130px">来源</th><th style="width:150px">归属</th><th>授权路径</th><th style="width:120px">有效期</th></tr></thead>
+    <tbody>
+      <tr><td><b>内部</b></td><td>HR 主数据同步</td><td>分公司 → 部门 → 岗位</td><td>岗位 → 角色模板 → 功能点 × 操作；叠加分公司 / 部门差量</td><td>随在职状态</td></tr>
+      <tr><td><b>外包</b></td><td>项目负责人提交团队清单</td><td><b>项目</b>（无组织归属）</td><td>项目 → 项目角色 → 项目资源 × 操作</td><td><b>必填，与项目周期一致</b></td></tr>
+      <tr><td><b>外部</b></td><td>合作单位 / 监理 / 设计院等</td><td>合作项目或合同</td><td>同外包：按项目资源授权</td><td>必填</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <b>边界：</b>外包与外部人员不写入人事表，不占用部门编制，不出现在组织树的人数统计中；他们的账号只在"项目"视图下可见。
+  </div>
+
+  <h3>2.2 角色模板 <span class="chg mod">v0.5 修订</span></h3>
+  <p>角色不再是每个岗位一个，而是权限清单中已有的 5 个模板。岗位只决定"落到哪个模板"，不再各自派生角色。</p>
+  <table>
+    <thead><tr><th style="width:130px">角色模板</th><th style="width:90px">人数</th><th style="width:120px">可访问功能点</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><b>普通员工</b></td><td>9,596</td><td>67 / 359（19%）</td><td>11 个"员"级岗位，覆盖 81% 的人员</td></tr>
+      <tr><td><b>部门经理</b></td><td>277</td><td>297 / 359（83%）</td><td>部长、主任、主管等管理岗</td></tr>
+      <tr><td><b>项目经理</b></td><td>108</td><td>161 / 359（45%）</td><td>项目经理、项目副经理、项目总工</td></tr>
+      <tr><td><b>公司领导</b></td><td>19</td><td>359 / 359（100%）</td><td>董事长、总经理、副总经理等</td></tr>
+      <tr><td><b>业务系统管理员</b></td><td>待定</td><td>359 / 359</td><td>清单中每项为"全部"；须按系统单独指定，不与 IAM 系统管理员混同</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 岗位映射</h3>
+  <ul>
+    <li>建立"岗位 → 角色模板"映射表，54 个岗位全覆盖；映射由安全管理员维护，HR 岗位新增时产生待处理提示。</li>
+    <li>映射变更前须显示影响人数（如"技术员 → 普通员工，影响 908 人"）并要求确认。</li>
+    <li>同一岗位名称在不同分公司可以映射到同一模板，但<b>权限差异由差量表达</b>，不通过拆分角色解决。</li>
+  </ul>
+  <div class="callout warn">
+    <b>命名冲突提醒：</b>权限清单中的"系统管理员"指业务系统管理员（对各功能点有全部权限），与 IAM 内部的系统管理员（只维护档案、不参与授权）不是同一概念。界面上一律写作"业务系统管理员"与"IAM 系统管理员"。
+  </div>
+
+  <h3>2.4 治理角色与维护层级 <span class="chg">v0.5.1</span></h3>
+  <p>配置权限按"谁管下一级"分层：总公司管理员维护分公司差量并指定业务系统管理员，分公司管理员维护本分公司的部门差量。</p>
+  <table>
+    <thead><tr><th style="width:130px">治理角色</th><th>职责</th><th style="width:220px">边界</th></tr></thead>
+    <tbody>
+      <tr><td><b>总公司管理员</b></td><td>维护分公司差量、指定各系统的业务系统管理员、审批最高敏感级例外；可视作平台的超级用户</td><td>不能删除或修改审计日志；不能审批自己的申请；所有操作纳入重点审计</td></tr>
+      <tr><td>分公司管理员</td><td>维护本分公司的部门差量、审批中敏感级例外与跨部门申请</td><td>不能修改分公司差量（只读）、不能跨分公司</td></tr>
+      <tr><td>部门负责人</td><td>审批本部门的一级申请、复核部门内权限摘要</td><td>不能配置差量、不能授予例外</td></tr>
+      <tr><td>安全管理员</td><td>维护角色模板、岗位映射、敏感级标记，执行授权</td><td>不能查看审计日志</td></tr>
+      <tr><td>系统管理员</td><td>维护系统档案、功能点目录、组织同步</td><td>不参与任何授权</td></tr>
+      <tr><td>审计员</td><td>全量检索与导出</td><td>只读，无任何写入</td></tr>
+      <tr><td>项目负责人</td><td>创建项目、提交外包团队清单、项目内增删成员</td><td>不能超出项目资源范围；扩大资源需审批</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <b>关于"超级用户"：</b>总公司管理员是权限最高的<b>配置者</b>，但不是凌驾于审计之上的角色。三权分立仍然成立——它不能清除记录，也不能给自己或他人直接授予业务权限而不留痕。
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="no">03</span>授权模型</h2>
+
+  <h3>3.1 内部员工：四层叠加 <span class="chg mod">v0.5 修订</span></h3>
+  <div class="formula">
+最终权限 = 角色模板（岗位映射）<br>
+　　　　　+ 分公司差量（增 / 禁）<br>
+　　　　　+ 部门差量（增 / 禁）<br>
+　　　　　+ 个人例外授予
+  </div>
+  <p>每一层的授权对象都是"功能点 × 操作"的组合，例如"报销单 · 审批 / 查看 + 审批"。差量允许只调整其中一个操作——比如只禁"导出"而保留"查看"。</p>
+      <p><b>差量的主体是岗位，不是角色。</b>角色模板只是岗位的默认权限包；同一部门里"会计"和"出纳"可能都映射到"普通员工"，但需要的权限不同，若差量挂在角色上，调整一个会误伤另一个。</p>
+  <table>
+    <thead><tr><th style="width:130px">层级</th><th style="width:190px">作用域</th><th>优先级与说明</th></tr></thead>
+    <tbody>
+      <tr><td>角色模板</td><td>全公司 × 角色</td><td>最低优先级，默认授予</td></tr>
+      <tr><td>分公司差量</td><td>分公司 × 岗位</td><td>覆盖模板；用于区域合规、区域经营差异</td></tr>
+      <tr><td>部门差量</td><td>分公司 × 部门 × 岗位</td><td>覆盖分公司差量；用于"同岗位、不同部门职责不同"</td></tr>
+      <tr><td>例外授予</td><td>用户 × 功能点 × 操作</td><td>最高优先级，可覆盖任意层级的禁用；突破禁用须标注并进审计清单</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 为什么要部门差量</h3>
+  <p>同名岗位在不同部门的职责差别很大，用一套角色模板或分公司差量都表达不了。典型例子：</p>
+  <table>
+    <thead><tr><th style="width:150px">岗位</th><th style="width:200px">所在部门</th><th>实际需要的权限</th></tr></thead>
+    <tbody>
+      <tr><td>会计</td><td>分公司财务部</td><td>总账凭证：查看 / 新增 / 编辑；财务报表：查看 / 导出</td></tr>
+      <tr><td>会计</td><td>第一项目经理部</td><td>成本归集：查看；项目成本报表：查看；<b>不可编辑总账凭证</b></td></tr>
+    </tbody>
+  </table>
+  <p>两者岗位名相同、角色模板相同，差异全部用"项目经理部 × 会计"这一条部门差量表达：禁用总账凭证的编辑与新增。若用例外授予处理，会变成逐人配置，无法维护。</p>
+  <div class="callout">
+    <b>配置量估算：</b>作用域组合是"部门 × 岗位"，理论组合数很大，但只配差异项；实际差异通常集中在 10–20 个岗位、少量关键部门，约 60–100 条，可维护。<br>
+    <b>维护层级：</b>分公司差量由总公司管理员维护，部门差量由分公司管理员维护，逐级下放、逐级留痕。
+  </div>
+
+  <h3>3.3 外包团队：项目域授权 <span class="chg">v0.5 新增</span></h3>
+  <div class="formula">
+最终权限 = 项目角色授权 ∩ 项目资源范围 ∩ 有效期（项目状态 = 进行中）
+  </div>
+  <ul>
+    <li><b>项目角色</b>：开发、测试、实施、运维、项目经理，由项目负责人维护，跨项目复用。</li>
+    <li><b>项目资源</b>：代码库、测试环境、生产配置、脱敏数据、接口密钥、项目文档，逐项标注敏感级。</li>
+    <li><b>交集语义</b>：项目角色给"能做什么"，资源范围给"能对什么做"，两者取交集；任何一项缺失即无权。</li>
+    <li>外包账号<b>不参与</b>功能点权限判定，也不出现在组织树、部门人数与内部权限摘要中。</li>
+  </ul>
+  <table>
+    <thead><tr><th style="width:120px">项目角色</th><th>典型资源与操作</th></tr></thead>
+    <tbody>
+      <tr><td>开发</td><td>代码库：读 / 写；测试环境：读 / 写 / 部署；脱敏数据：读</td></tr>
+      <tr><td>测试</td><td>代码库：读；测试环境：读 / 写；缺陷库：读 / 写</td></tr>
+      <tr><td>实施</td><td>生产配置：读；业务数据：只读（脱敏）；部署包：读</td></tr>
+      <tr><td>运维</td><td>测试 / 生产环境：读 / 部署；日志：读；密钥：不可见</td></tr>
+    </tbody>
+  </table>
+  <p class="tag a">示例：A 团队只能访问 A 项目的代码库、A 项目测试环境与 A 项目脱敏数据，无法看到 B 项目任何资源。</p>
+
+  <h3>3.4 权限敏感度分级 <span class="chg">v0.5.1</span></h3>
+  <p>例外申请的审批层级由权限敏感度决定，而不是一律两级。功能点增加"敏感级"字段（L1–L3），取一张申请单中<b>最高</b>的一级作为审批依据。</p>
+  <table>
+    <thead><tr><th style="width:70px">敏感级</th><th style="width:230px">适用范围</th><th>例外审批链</th></tr></thead>
+    <tbody>
+      <tr><td><b>L1 一般</b></td><td>OA 日常、即时通讯、知识库、会议室等协作类</td><td>部门负责人 → 通过</td></tr>
+      <tr><td><b>L2 重要</b></td><td>工程、物资、巡检、合同查阅等业务类</td><td>部门负责人 → 分公司管理员</td></tr>
+      <tr><td><b>L3 高敏</b></td><td>财务总账、薪酬、成本、个人信息、项目密钥、系统管理后台</td><td>部门负责人 → 分公司管理员 → 总公司管理员</td></tr>
+    </tbody>
+  </table>
+  <p>外包不适用该分级：外包的资源扩大统一走"项目归属部门负责人 → 安全管理员"，因为其对象是代码与数据，而不是业务功能点。</p>
+</section>
+<section id="s4">
+  <h2><span class="no">04</span>账号与认证</h2>
+
+  <h3>4.1 账号来源 <span class="chg">v0.5 修订</span></h3>
+  <p>所有账号同一张表，用 <code>UserSource</code> 区分来源；组织字段对外部与外包为空，改为挂 <code>ProjectID</code>。</p>
+  <table>
+    <thead><tr><th style="width:110px">字段</th><th style="width:140px">内部</th><th style="width:140px">外包</th><th>外部</th></tr></thead>
+    <tbody>
+      <tr><td>UserSource</td><td><code>INTERNAL</code></td><td><code>OUTSOURCE</code></td><td><code>EXTERNAL</code></td></tr>
+      <tr><td>姓名 / 用户名</td><td>HR 同步</td><td>项目负责人录入</td><td>合作单位录入</td></tr>
+      <tr><td>分公司 / 部门 / 岗位</td><td>必填，来自 HR</td><td>不填</td><td>不填</td></tr>
+      <tr><td>所属单位</td><td>本公司</td><td>外包公司（必填）</td><td>合作单位（必填）</td></tr>
+      <tr><td>项目</td><td>不填</td><td>必填，项目 ID</td><td>必填，合作项目</td></tr>
+      <tr><td>有效期</td><td>随在职状态</td><td><b>必填</b></td><td><b>必填</b></td></tr>
+      <tr><td>合同 / 项目名称</td><td>不填</td><td>必填</td><td>必填</td></tr>
+    </tbody>
+  </table>
+  <p class="tag">现有员工表的用户名是 SG000001 形式的工号，v0.5 建议沿用；文档 v0.3 的"姓名拼音 + 手机后四位"规则在万人规模下会产生大量重名（实测 2,141 条同名）。</p>
+
+  <h3>4.2 内部员工生命周期</h3>
+  <table>
+    <thead><tr><th style="width:100px">阶段</th><th style="width:150px">触发</th><th>权限处理</th></tr></thead>
+    <tbody>
+      <tr><td>入职</td><td>HR 同步新增</td><td>按岗位映射授予角色模板，叠加分公司 / 部门差量</td></tr>
+      <tr><td>转岗</td><td>部门或岗位变化</td><td>回收旧模板权限与非基线权限（申请角色、例外授予）；重算部门差量；踢出会话；推送失效清单</td></tr>
+      <tr><td>离职</td><td>HR 同步停用</td><td>账号停用、会话失效、权限归零</td></tr>
+      <tr><td>销号</td><td>停用满 2 年</td><td>归档并脱敏，日志保留至归档期满</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 外包 / 外部人员生命周期 <span class="chg">v0.5 新增</span></h3>
+  <table>
+    <thead><tr><th style="width:110px">阶段</th><th style="width:170px">动作</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td>项目立项</td><td>项目负责人在 IAM 建项目：起止日期、负责人、资源清单</td><td>项目状态 = 立项中，不可授权</td></tr>
+      <tr><td>团队开户</td><td>提交团队清单（姓名、外包公司、项目角色、有效期）</td><td>生成 UserSource=外包 的账号，有效期默认取项目结束日</td></tr>
+      <tr><td>项目内调整</td><td>项目负责人在既有资源范围内增删成员、调整项目角色</td><td>免审批，全量留痕</td></tr>
+      <tr><td>扩大资源</td><td>新增资源类型或扩大数据范围</td><td>需审批（项目归属部门负责人 → 安全管理员）</td></tr>
+      <tr><td>项目暂停 / 结项</td><td>项目状态变更</td><td><b>立即失效全部账号与会话</b>，无需逐人操作</td></tr>
+      <tr><td>人员退出</td><td>项目负责人移除成员</td><td>账号立即停用，有效期截断</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <b>硬约束：</b>项目结束时间早于账号有效期时，以项目结束时间为准。不允许出现"项目已结项、账号仍可用"的状态。
+  </div>
+
+  <h3>4.4 会话</h3>
+  <ul>
+    <li>绝对到期：登录当日 23:59:59，不受下班时间与加班影响；到期前 10 分钟提示。</li>
+    <li>统一登出：任一入口登出，全部会话失效；管理员可强制踢出。</li>
+    <li>空闲超时默认关闭，可配置为 30 分钟。</li>
+    <li>外包账号在项目结项、成员移除、有效期届满时立即踢出，不等待自然到期。</li>
+  </ul>
+
+  <h3>4.5 凭证策略</h3>
+  <ul>
+    <li>密码 ≥ 8 位，含大小写、数字、符号中的三类；90 天强制更换，不得与最近 3 次重复。</li>
+    <li>连续失败 5 次锁定 15 分钟，锁定期提示剩余时间。</li>
+    <li>本期不启用多因素认证（模拟实验环境）；生产化前须补充。</li>
+    <li>外包账号可附加 IP 白名单或设备限制（待评估）。</li>
+  </ul>
+</section>
+
+<section id="s5">
+  <h2><span class="no">05</span>申请与审批</h2>
+
+  <h3>5.1 申请类型</h3>
+  <table>
+    <thead><tr><th style="width:150px">类型</th><th>触发</th><th style="width:200px">申请对象</th></tr></thead>
+    <tbody>
+      <tr><td>常规角色</td><td>本部门可用角色，且不涉及敏感系统</td><td>角色模板</td></tr>
+      <tr><td>敏感系统权限</td><td>涉及敏感系统</td><td>功能点 × 操作</td></tr>
+      <tr><td>跨部门角色</td><td>角色归属其他部门</td><td>角色模板</td></tr>
+      <tr><td>例外权限</td><td>岗位权限之外单独申请</td><td>功能点 × 操作</td></tr>
+      <tr><td><b>项目团队开户</b></td><td>外包 / 外部项目启动</td><td>项目 + 成员清单 + 项目角色</td></tr>
+      <tr><td><b>项目资源扩大</b></td><td>需要新增资源类型或数据范围</td><td>项目资源</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 审批链 <span class="chg mod">v0.5 修订</span></h3>
+  <table>
+    <thead><tr><th style="width:170px">类型</th><th style="width:190px">节点 1</th><th style="width:200px">节点 2</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>常规角色</td><td>部门负责人</td><td>—</td><td>一级审批</td></tr>
+      <tr><td>敏感系统权限</td><td>部门负责人</td><td>业务系统负责人</td><td>敏感标记由安全管理员维护</td></tr>
+      <tr><td>跨部门 / 例外权限</td><td>部门负责人</td><td>分公司管理员</td><td>例外按敏感级：L1 仅节点 1；L2 两级；L3 增加总公司管理员终审（见 3.4）；突破禁用须在节点 2 确认</td></tr>
+      <tr><td><b>项目团队开户</b></td><td>项目归属部门负责人</td><td>安全管理员</td><td>外包不进部门负责人链；按项目批量审批</td></tr>
+      <tr><td><b>项目资源扩大</b></td><td>项目归属部门负责人</td><td>安全管理员</td><td>仅在现有资源范围内增删成员时可免审批</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.3 审批人解析</h3>
+  <ul>
+    <li><b>内部：</b>员工所在部门 → 部门信息表中的"部门经理"；为空或离职时上溯上级部门，最多三级，再到分公司管理员、总部安全管理员。</li>
+    <li><b>外包：</b>项目表 → 项目负责人；项目负责人同时是申请人时，上溯项目归属部门负责人。</li>
+    <li>共同规则：不得自审；相邻节点为同一人时合并；审批人在办期间停用则单节点重算并留痕。</li>
+    <li>节点停留超过 48 小时提醒，抄送上级，<b>不自动通过</b>。</li>
+  </ul>
+
+  <h3>5.4 生效方式</h3>
+  <ul>
+    <li>审批通过即生效，或自指定日期起生效（后者先进入"待生效"状态）。</li>
+    <li>外包账号不受"预约生效"影响：账号随项目立项生效，随项目结项失效。</li>
+    <li>例外授予不设有效期、不复审；转岗时全部失效。</li>
+  </ul>
+</section>
+
+<section id="s6">
+  <h2><span class="no">06</span>审计</h2>
+  <ul>
+    <li>四类日志：登录、权限变更、审批、管理操作；只写不可删，任何角色都没有删除入口。</li>
+    <li>保留期限：在线 ≥ 1 年，归档 ≥ 3 年；销号仅脱敏个人字段，日志主体保留至归档期满。</li>
+    <li>固定报表：例外授予清单（含"突破禁用"列）、分公司 / 部门差量对比、<b>项目成员与资源清单</b>、外包账号到期表。</li>
+    <li>异常提示：非工作时间敏感授权、单人批量开户、项目结项后仍登录、短期大量导出。</li>
+    <li>审计员只读；安全管理员无权查看审计日志；三权分立不设例外。</li>
+  </ul>
+</section>
+
+<section id="s7">
+  <h2><span class="no">07</span>数据模型</h2>
+  <p>下表为需求阶段核心实体，<span class="chg">v0.5 新增</span>标注本次新增或改名的实体。</p>
+  <table>
+    <thead><tr><th style="width:110px">实体</th><th>关键字段</th><th style="width:170px">说明</th></tr></thead>
+    <tbody>
+      <tr><td>用户</td><td>用户名、姓名、<b>UserSource</b>、手机号、分公司、部门、岗位、<b>项目ID</b>、状态、<b>有效期</b>、来源</td><td>三类主体同表；外部与外包不填组织字段</td></tr>
+      <tr><td>组织</td><td>组织ID、名称、层级、上级ID、负责人ID</td><td>分公司 / 部门两级，来源 HR</td></tr>
+      <tr><td>岗位</td><td>岗位ID、名称、所属部门</td><td>54 个岗位</td></tr>
+      <tr><td>角色模板</td><td>角色编码、名称、类型（基线）、状态</td><td>5 个，来自权限清单</td></tr>
+      <tr><td><b>岗位映射</b></td><td>岗位ID、角色模板ID、生效时间</td><td><span class="chg">新增</span>54 → 5 的映射</td></tr>
+      <tr><td>角色权限</td><td>角色ID、功能点ID、<b>操作</b>、<b>数据范围</b></td><td><span class="chg">新增</span>操作位与数据范围</td></tr>
+      <tr><td>分公司差量</td><td>分公司ID、<b>岗位ID</b>、功能点ID、操作、类型（增/禁）、理由</td><td>禁用必填理由</td></tr>
+      <tr><td><b>部门差量</b></td><td>分公司ID、部门ID、<b>岗位ID</b>、功能点ID、操作、类型、理由</td><td><span class="chg">新增</span>同岗位跨部门差异</td></tr>
+      <tr><td>例外授予</td><td>用户ID、功能点ID、操作、申请单号、审批人、授予时间、事由、是否突破禁用、生效方式、状态</td><td>永久有效；转岗失效</td></tr>
+      <tr><td><b>项目</b></td><td>项目ID、名称、所属部门、负责人、起止日期、状态</td><td><span class="chg">新增</span>外包授权的作用域</td></tr>
+      <tr><td><b>项目资源</b></td><td>项目ID、资源ID、类型（代码/环境/数据/文档/密钥）、敏感级</td><td><span class="chg">新增</span>授权对象</td></tr>
+      <tr><td><b>项目成员</b></td><td>项目ID、用户ID、项目角色、有效期</td><td><span class="chg">新增</span>外包账号与项目的绑定</td></tr>
+      <tr><td>申请单</td><td>单号、申请人/项目、申请类型、申请对象、事由、生效方式、状态、当前节点、审批链快照</td><td>含链版本号</td></tr>
+      <tr><td>审批记录</td><td>单号、节点、审批人、解析依据、意见、时间、结果</td><td>逐级留痕</td></tr>
+      <tr><td>会话</td><td>会话ID、用户ID、签发时间、绝对到期、来源IP、终端、状态</td><td>支持统一登出与踢出</td></tr>
+      <tr><td>日志</td><td>操作人、类型、对象、变更前后值、事由、时间、IP</td><td>只写不可删</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s8">
+  <h2><span class="no">08</span>非功能需求</h2>
+  <table>
+    <thead><tr><th style="width:110px">类别</th><th>指标</th><th style="width:170px">验收方式</th></tr></thead>
+    <tbody>
+      <tr><td>认证性能</td><td>峰值 ≥ 10,000 次 / 秒，P99 &lt; 500ms</td><td>压测</td></tr>
+      <tr><td>可用性</td><td>≥ 99.9%；认证故障不影响已登录用户</td><td>故障演练</td></tr>
+      <tr><td>权限时效</td><td>变更后 5 秒内失效缓存，下一次请求即生效</td><td>功能测试</td></tr>
+      <tr><td>项目失效</td><td>项目结项后 60 秒内全部账号会话失效</td><td>功能测试</td></tr>
+      <tr><td>安全合规</td><td>手机号脱敏；批量导出需审批并留痕</td><td>安全测试</td></tr>
+      <tr><td>审计合规</td><td>日志只写不可删，在线 ≥ 1 年、归档 ≥ 3 年</td><td>现场验证</td></tr>
+      <tr><td>易用性</td><td>查询权限、提交申请、审批均不超过 3 步</td><td>可用性测试</td></tr>
+      <tr><td>兼容性</td><td>主流浏览器当前及前两个大版本；支持移动端审批</td><td>兼容性测试</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s9">
+  <h2><span class="no">09</span>决议清单</h2>
+  <p>Q1–Q18 为此前评审已决议事项，Q2、Q3、Q17 在本版按新模型改写；Q19–Q24 为本版新增决议。</p>
+  <h3>9.1 既有决议（摘要）</h3>
+  <table>
+    <thead><tr><th style="width:50px">编号</th><th style="width:180px">事项</th><th>结论</th></tr></thead>
+    <tbody>
+      <tr><td>Q1</td><td>岗位与角色的归属</td><td>岗位由 HR 维护；角色模板与岗位映射由安全管理员维护</td></tr>
+      <tr><td>Q2</td><td>外包人员字段</td><td><span class="chg mod">改写</span>外包不进人事表，<code>UserSource=OUTSOURCE</code>，挂项目；原"字段与内部员工一致"废止</td></tr>
+      <tr><td>Q3</td><td>差量粒度</td><td><span class="chg mod">改写</span>三级：模板 / 分公司 / 部门；原"最小作用域=分公司×岗位"废止</td></tr>
+      <tr><td>Q4</td><td>通知渠道</td><td>站内信（必达）+ 邮件（提醒），不用短信</td></tr>
+      <tr><td>Q5</td><td>密码找回</td><td>手机号 + 工号自助重置；失败走管理员工单</td></tr>
+      <tr><td>Q6</td><td>登录终端</td><td>单区域部署，统一账号密码；原"外网强制 MFA"废止</td></tr>
+      <tr><td>Q7</td><td>考勤是否纳入</td><td>不纳入，考勤系统作为接入方</td></tr>
+      <tr><td>Q8</td><td>权限可见范围</td><td>本人 / 本部门摘要 / 全量仅安全管理员与审计员</td></tr>
+      <tr><td>Q9</td><td>销号</td><td>停用满 2 年销号，脱敏保留，日志不删</td></tr>
+      <tr><td>Q10</td><td>部署</td><td>模拟实验环境，单区域，不涉及公网与等保</td></tr>
+      <tr><td>Q11</td><td>例外与禁用</td><td>例外优先；突破禁用须标注并进审计清单</td></tr>
+      <tr><td>Q12</td><td>生效方式</td><td>通过即生效 / 预约生效</td></tr>
+      <tr><td>Q13</td><td>多因素认证</td><td>本期取消</td></tr>
+      <tr><td>Q14</td><td>会话到期</td><td>当日 23:59:59，提前 10 分钟提示，空闲超时默认关闭</td></tr>
+      <tr><td>Q15</td><td>审批链</td><td>规则生成、最多两级、不自动通过、不设三级</td></tr>
+      <tr><td>Q16</td><td>转岗</td><td>非新岗位基线权限（申请角色、例外）全部失效</td></tr>
+      <tr><td>Q17</td><td>外包续期</td><td><span class="chg mod">改写</span>随项目周期续期，单次不超过 12 个月；项目结项即失效</td></tr>
+      <tr><td>Q18</td><td>部门权限摘要</td><td>收敛到系统级汇总，不展开功能点与事由</td></tr>
+    </tbody>
+  </table>
+
+  <h3>9.2 本版新增决议</h3>
+  <table>
+    <thead><tr><th style="width:50px">编号</th><th style="width:170px">事项</th><th style="width:70px">状态</th><th>结论</th></tr></thead>
+    <tbody>
+      <tr><td>Q19</td><td>角色模型</td><td>已决议</td><td>5 个角色模板 + 54 个岗位的映射表，不为每个岗位建角色</td></tr>
+      <tr><td>Q20</td><td>权限粒度</td><td>已决议</td><td>功能点 × 操作（查/增/改/批/导）+ 数据范围；一期直接做</td></tr>
+      <tr><td>Q21</td><td>组织差异</td><td>已决议</td><td>增加部门差量，解决同岗位跨部门权限不同</td></tr>
+      <tr><td>Q22</td><td>主体区分</td><td>已决议</td><td>UserSource = 内部 / 外部 / 外包</td></tr>
+      <tr><td>Q23</td><td>外包授权</td><td>已决议</td><td>项目 → 项目角色 → 项目资源，不挂组织架构</td></tr>
+      <tr><td>Q24</td><td>外包有效期</td><td>已决议</td><td>必填且与项目周期绑定；项目结束或人员退出立即失效</td></tr>
+      <tr><td>Q25</td><td>用户名规则</td><td>已决议</td><td>沿用 SG 工号；原"姓名拼音 + 手机后四位"废止（万人规模下有 2,141 条重名）</td></tr>
+      <tr><td>Q26</td><td>"外部"人员的边界</td><td>已决议</td><td>外部单位与外包同机制：按项目授权、必填有效期，仅来源单位字段不同</td></tr>
+      <tr><td>Q27</td><td>差量由谁维护</td><td>已决议</td><td><b>逐级维护：</b>总公司管理员维护分公司差量，分公司管理员维护部门差量</td></tr>
+      <tr><td>Q28</td><td>业务系统管理员由谁指定</td><td>已决议</td><td>由总公司管理员指定；每系统 1–2 人，其"全部"权限单独审计</td></tr>
+      <tr><td>Q29</td><td>例外按敏感度分级</td><td>已决议</td><td>功能点设敏感级 L1–L3，取单内最高级决定审批链（见 3.4）</td></tr>
+      <tr><td>Q30</td><td>总公司管理员的定位</td><td>已决议</td><td>视作平台超级用户，负责最高级配置与审批；仍受三权分立约束，不能清除日志、不能自审</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s10">
+  <h2><span class="no">10</span>变更记录</h2>
+  <table>
+    <thead><tr><th style="width:60px">版本</th><th style="width:110px">日期</th><th>变更内容</th></tr></thead>
+    <tbody>
+      <tr><td>v0.1–v0.3</td><td>2026-10-15</td><td>骨架版；决议 Q1–Q10；补充内外网、密码找回、权限可见范围</td></tr>
+      <tr><td>v0.4</td><td>2026-10-17</td><td>决议 Q11–Q18；新增审批链计算模型；取消 MFA；会话定为 23:59:59；转岗失效；外包续期规则</td></tr>
+      <tr><td><b>v0.5</b></td><td>2026-10-17</td><td>依据员工表、部门表、权限清单重做模型：角色改为 5 模板 + 岗位映射；权限改为功能点 × 操作 + 数据范围；差量扩展为模板 / 分公司 / 部门三级；新增 UserSource 与项目域授权；外包生命周期与项目周期绑定；新增第 11 章数据现状与缺口</td></tr>
+      <tr><td><b>v0.5.1</b></td><td>2026-10-17</td><td>决议 Q25–Q30：用户名沿用 SG 工号；外部与外包同机制；差量逐级维护（总公司 → 分公司差量，分公司 → 部门差量）；业务系统管理员由总公司管理员指定；例外按敏感级 L1–L3 分级审批；新增 2.4 治理角色与 3.4 敏感度分级两节</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s11">
+  <h2><span class="no">11</span>数据现状与缺口</h2>
+  <h3>11.1 现有数据</h3>
+  <table>
+    <thead><tr><th style="width:180px">文件</th><th style="width:150px">规模</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td>市政公司员工信息表</td><td>10,000 行 × 6 列</td><td>姓名、用户名、分公司、部门、岗位、电话</td></tr>
+      <tr><td>市政公司部门信息表</td><td>111 行 × 3 列</td><td>部门名称、部门经理、上级部门；支撑审批链</td></tr>
+      <tr><td>应用软件功能权限清单</td><td>18 系统 / 359 功能点 / 5 角色</td><td>角色权限矩阵的原始来源</td></tr>
+    </tbody>
+  </table>
+
+  <h3>11.2 缺口与补齐方案</h3>
+  <table>
+    <thead><tr><th style="width:50px">序</th><th style="width:240px">缺口</th><th>处理</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>员工表无 UserSource、项目、有效期、账号状态</td><td>新增字段；外部与外包不写入人事表，单独挂项目</td></tr>
+      <tr><td>2</td><td>部门表无部门编码；部门名称带分公司前缀，员工表不带</td><td>补 <code>OrgCode</code>，员工表按部门 ID 关联；导入时按"分公司-部门"拼接清洗</td></tr>
+      <tr><td>3</td><td>权限清单无敏感系统标记、无数据范围列</td><td>增加"是否敏感""数据范围"两列；6 处"本人"拆为数据范围</td></tr>
+      <tr><td>4</td><td>8 行脏数据：<code>view/</code> 混写、空值</td><td>建立清洗映射表，人工确认后入库</td></tr>
+      <tr><td>5</td><td>岗位无职级 / 类别，54 个岗位需人工映射到 5 个模板</td><td>由 HR 与安全管理员共同确认映射表，一次性维护、后续增量</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <b>结论：</b>现有数据足以支撑内部员工的角色模板授权与审批链解析，但不足以支撑外包生命周期与敏感分级；原型面向评审展示已按本版模型补齐这些部分，并在"组织与账号"页显式标注缺口。
+  </div>
+</section>
+
+<footer>
+  统一权限管理系统（IAM）需求规格说明书 · v0.5.1 · 2026-10-17
+</footer>
+</main>
+</div>
+</body>
+</html>
