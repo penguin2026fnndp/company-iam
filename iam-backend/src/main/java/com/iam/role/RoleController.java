@@ -18,7 +18,7 @@ public class RoleController {
         this.roleService = roleService;
     }
 
-    public record CreateReq(String code, String name, String remark) {}
+    public record CreateReq(String code, String name, String remark, List<Long> permissionIds) {}
     public record UpdateReq(String name, String remark, Integer status) {}
     public record PermsReq(List<Long> permissionIds) {}
 
@@ -40,7 +40,7 @@ public class RoleController {
     @PostMapping
     @RequirePerm("ROLE:ADD")
     public Result create(@RequestBody CreateReq req) {
-        return Result.ok(roleService.create(req.code(), req.name(), req.remark()));
+        return Result.ok(roleService.create(req.code(), req.name(), req.remark(), req.permissionIds()));
     }
 
     @Operation(summary = "修改角色", description = "停用角色会撤销其持有人会话")
@@ -54,8 +54,7 @@ public class RoleController {
     @DeleteMapping("/{id}")
     @RequirePerm("ROLE:DELETE")
     public Result delete(@PathVariable long id) {
-        roleService.delete(id);
-        return Result.ok();
+        return Result.ok(roleService.delete(id));
     }
 
     @Operation(summary = "查看角色权限", description = "按功能点返回勾选状态")

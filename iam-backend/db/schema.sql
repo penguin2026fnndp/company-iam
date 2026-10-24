@@ -16,7 +16,19 @@ DROP TABLE IF EXISTS sys_role_permission;
 DROP TABLE IF EXISTS sys_permission;
 DROP TABLE IF EXISTS sys_role;
 DROP TABLE IF EXISTS sys_user;
+DROP TABLE IF EXISTS sys_department;
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- 0. 部门（manager_id 指向该部门主管，不建外键以避免与 sys_user 循环依赖）
+CREATE TABLE sys_department (
+  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name       VARCHAR(64)     NOT NULL,
+  manager_id BIGINT UNSIGNED NULL COMMENT '部门主管用户ID',
+  created_at DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_dept_name (name),
+  KEY idx_dept_manager (manager_id)
+) ENGINE=InnoDB COMMENT='部门';
 
 -- 1. 用户：只存身份，不存权限
 CREATE TABLE sys_user (
@@ -26,10 +38,13 @@ CREATE TABLE sys_user (
   phone         VARCHAR(20)     NULL     COMMENT '手机号',
   password_hash VARCHAR(100)    NOT NULL COMMENT 'BCrypt',
   status        TINYINT         NOT NULL DEFAULT 1 COMMENT '1 启用 / 0 停用',
+  department_id BIGINT UNSIGNED NULL COMMENT '所属部门',
   created_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uk_user_account (account)
+  UNIQUE KEY uk_user_account (account),
+  KEY idx_user_dept (department_id),
+  CONSTRAINT fk_user_dept FOREIGN KEY (department_id) REFERENCES sys_department (id) ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='用户';
 
 -- 2. 角色：权限包

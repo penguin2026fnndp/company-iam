@@ -1,0 +1,427 @@
+= 覆盖测试指南（黑盒 + 白盒）
+:toc:
+:toclevels: 3
+
+
+[NOTE]
+====
+版本：2026-10-24
+====
+
+>
+[NOTE]
+====
+适用对象：项目验收中的 Coverage Testing
+====
+
+>
+[NOTE]
+====
+配套文件：`docs/04-详细设计.md`、`IAM-API.postman_collection.json`
+====
+
+
+== 0. 测试范围与环境
+
+
+本轮测试对应最新的组织与 RBAC 数据模型：
+
+[cols="1,1",options="header"]
+|===
+|项目 |最新口径
+
+|权限点 |20 枚
+|角色 |5 个模板角色：ADMIN、MGR、EMP、LEADER、PM
+|部门 |技术部、财务部
+|管理员 |SG900001，ADMIN，20 枚权限、7 个菜单
+|技术部主管 |SG000101 张伟，角色 8 枚 + 直接审批权 1 枚，共 9 枚
+|技术部员工 |SG000102 李四，初始 2 枚权限
+|财务部员工 |SG000103 王五，初始 2 枚权限
+|财务部主管 |SG000108 郑楠，角色 8 枚 + 直接审批权 1 枚
+|密码 |演示账号初始密码统一为 `123456`
+|===
+
+
+权限合并规则：
+
+[source,text]
+----
+用户有效权限 = 所有启用角色权限的并集 + 用户直接权限
+----
+
+
+张伟的 9 枚权限由 `MGR` 角色的 8 枚权限与直接权限 `APPLY:APPROVE` 合并得到。直接权限表只记录额外授权，不重复存储角色带来的权限。
+
+=== 0.1 数据库准备
+
+
+数据库名称固定为 `iam_rbac`。
+
+首次建库或表结构变更后执行：
+
+[source,powershell]
+----
+cd C:\Users\27642\Documents\Codex\2026-10-16\yu\outputs\iam-backend
+mysql -uroot -p --execute="SOURCE db/schema.sql"
+mysql -uroot -p --execute="SOURCE db/seed.sql"
+----
+
+
+已有正确表结构时，每轮 Newman 前重置演示数据：
+
+[source,powershell]
+----
+mysql -uroot -p --execute="SOURCE db/reset.sql"
+----
+
+
+重置后可快速核对关键基线：
+
+[source,sql]
+----
+USE iam_rbac;
+SELECT COUNT(*) AS users FROM sys_user;                   -- 10
+SELECT COUNT(*) AS departments FROM sys_department;       -- 2
+SELECT COUNT(*) AS roles FROM sys_role;                   -- 5
+SELECT COUNT(*) AS permissions FROM sys_permission;       -- 20
+
+SELECT COUNT(*) AS zhangwei_role_permissions
+FROM sys_role_permission rp
+JOIN sys_user_role ur ON ur.role_id = rp.role_id
+WHERE ur.user_id = 2;                                     -- 8
+
+SELECT COUNT(*) AS zhangwei_direct_permissions
+FROM sys_user_permission
+WHERE user_id = 2;                                        -- 1
+----
+
+
+=== 0.2 后端准备
+
+
+[source,powershell]
+----
+cd C:\Users\27642\Documents\Codex\2026-10-16\yu\outputs\iam-backend
+$env:JAVA_HOME = 'C:\Users\27642\AppData\Local\Programs\Eclipse Adoptium\jdk-21.0.12.1+1'
+& 'C:\Users\27642\Maven\apache-maven-3.10.0\bin\mvn.cmd' clean package
+java -jar target\iam-backend.jar
+----
+
+
+基础地址：
+
+[source,text]
+----
+http://127.0.0.1:8080
+----
+
+
+健康检查：
+
+[source,powershell]
+----
+Invoke-RestMethod http://127.0.0.1:8080/api/ping
+----
+
+
+'''
+
+
+== 1. 认证模块（黑盒）
+
+
+[cols="1,1,1,1",options="header"]
+|===
+|用例名称 |前置条件 |操作步骤 |预期结果
+
+|AUTH-01 正常登录 |数据库已重置；SG900001 未锁定 |`POST /api/auth/login`，Body 为 `{"account":"SG900001","password":"123456"}` |`code=0`；返回 `sessionId`；`permissions.length=20`；`menus.length=7`；会话到期时间为当日 `23:59:59`
+|AUTH-02 密码错误 |SG000102 未锁定 |使用 SG000102 和错误密码登录 |`code=401`；返回剩余尝试次数；不返回 `sessionId`
+|AUTH-03 连续失败锁定 |使用 Newman 本轮新建的唯一测试账号 |连续提交 5 次错误密码 |第 1 至 4 次 `code=401`；第 5 次 `code=429`；等待期间即使密码正确仍为 `code=429`
+|AUTH-04 当前用户 |已取得管理员 sessionId |`GET /api/auth/me`，携带 Bearer Token |返回管理员用户信息、20 枚权限和 7 个菜单
+|AUTH-05 登出 |已登录 |`POST /api/auth/logout` |`code=0`；原 Token 再访问受保护接口返回 401
+|===
+
+
+登录锁定状态保存在 `LoginGuard` 的进程内 `ConcurrentHashMap` 中。重启后端会清空锁定状态；数据库重置不会清空进程内计数。Postman 集合的锁定用例使用每轮新建的临时账号，避免污染张伟等固定测试账号。
+
+'''
+
+
+== 2. 鉴权模块（黑盒）
+
+
+[cols="1,1,1,1",options="header"]
+|===
+|用例名称 |前置条件 |操作步骤 |预期结果
+
+|AUTHZ-01 无 Token 访问 |服务已启动 |不携带 `Authorization` 请求 `GET /api/users` |`code=401`；响应体无用户列表
+|AUTHZ-02 伪造 Token 访问 |服务已启动 |携带随机或不存在的 Bearer Token 请求 `GET /api/users` |`code=401`；提示会话失效
+|AUTHZ-03 越权访问 |李四已登录 |携带李四 Token 请求 `GET /api/users` |`code=403`；`data.requiredPerm=USER:VIEW`
+|AUTHZ-04 无审批权访问待办 |李四已登录 |携带李四 Token 请求 `GET /api/applies?status=0` |`code=403`；缺少 `APPLY:APPROVE`
+|AUTHZ-05 强制下线 |用户已有有效 Token；管理员修改其角色或直接权限 |再次使用旧 Token 请求 `/api/auth/me` |`code=401`；重新登录后权限集合按新配置生效
+|===
+
+
+'''
+
+
+== 3. 审批流与部门隔离（黑盒）
+
+
+=== 3.1 测试主体
+
+
+[cols="1,1,1,1",options="header"]
+|===
+|账号 |部门 |权限说明 |测试用途
+
+|SG000101 张伟 |技术部 |MGR 8 枚 + `APPLY:APPROVE` |技术部审批人
+|SG000102 李四 |技术部 |EMP 2 枚 |同部门申请人
+|SG000103 王五 |财务部 |EMP 2 枚 |跨部门测试申请人
+|SG900001 管理员 |不归属部门 |ADMIN 20 枚 |全系统待办与跨部门审批
+|===
+
+
+=== 3.2 用例表
+
+
+[cols="1,1,1,1",options="header"]
+|===
+|用例名称 |前置条件 |操作步骤 |预期结果
+
+|AP-01 非法目标 ID |李四已登录 |提交 `targetType=PERM`、`targetId=9999` 的申请 |`code=400`；不生成申请单
+|AP-02 李四提交角色申请 |管理员已创建申请演示角色 |李四提交 `targetType=ROLE` 和该角色 ID |`code=0`；`status=0`
+|AP-03 重复待办拦截 |AP-02 的申请仍未审批 |李四对同一角色再次提交待办申请 |`code=409`；不生成第二张重复待办
+|AP-04 我的申请 |AP-02 已提交 |李四请求 `GET /api/applies/mine` |结果中包含刚提交的申请单
+|AP-05 张伟查看技术部待办 |AP-02 已提交 |张伟请求 `GET /api/applies?status=0` |能看到李四的申请
+|AP-06 张伟审批通过角色申请 |张伟是技术部主管 |对李四申请提交 `APPROVE` |`code=0`；`status=1`；李四会话立即失效
+|AP-07 角色自动生效 |AP-06 已完成 |李四重新登录 |返回角色列表包含新角色
+|AP-08 李四提交权限申请 |李四已重新登录；`FIN:RPT:EXPORT` 尚未拥有 |提交 `targetType=PERM`、`targetId=16`、理由完整 |`code=0`；`status=0`
+|AP-09 张伟审批通过权限申请 |申请属于技术部 |张伟审批通过 |`code=0`；写入 `sys_user_permission`；李四旧会话失效
+|AP-10 权限自动生效 |AP-09 已完成 |李四重新登录 |权限从 2 枚变为 3 枚，且包含 `FIN:RPT:EXPORT`
+|AP-11 最小权限校验 |李四仅有导出权 |请求 `GET /api/report/cost` |`code=403`；仍缺 `FIN:RPT:VIEW`，不允许仅凭导出权查看报表
+|AP-12 王五提交财务部申请 |王五已登录 |提交权限申请并记录单号 |`code=0`；生成财务部待办
+|AP-13 张伟待办按部门过滤 |王五待办已存在 |张伟请求待办列表 |不包含王五的财务部申请
+|AP-14 张伟强行跨部门审批 |已取得王五申请单号 |张伟直接调用该单的审批接口 |`code=403`；提示无权审批其他部门申请；单据仍为 `status=0`
+|AP-15 管理员查看全系统待办 |技术部与财务部均存在待办 |管理员请求 `GET /api/applies?status=0` |同时包含李四和王五的待办
+|AP-16 管理员跨部门审批 |AP-15 已完成 |管理员审批王五财务部申请 |`code=0`；不受部门隔离限制
+|AP-17 管理员驳回 |李四另有一张未处理的技术部待办 |管理员提交 `REJECT` 并填写原因 |`code=0`；`status=2`；原因落库
+|===
+
+
+=== 3.3 审批写入位置
+
+
+[cols="1,1,1",options="header"]
+|===
+|申请目标 |审批通过后的写入表 |生效方式
+
+|角色 `ROLE` |`sys_user_role` |撤销申请人会话；重新登录后按新角色合并权限
+|权限 `PERM` |`sys_user_permission` |撤销申请人会话；重新登录后按直接权限合并生效
+|===
+
+
+审批结果核查 SQL：
+
+[source,sql]
+----
+USE iam_rbac;
+SELECT id, applicant_id, target_type, target_id, status, approver_id,
+       approve_time, apply_reason, approve_comment
+FROM sys_permission_apply
+ORDER BY id DESC
+LIMIT 10;
+
+SELECT * FROM sys_user_role WHERE user_id = 3;
+SELECT * FROM sys_user_permission WHERE user_id = 3;
+----
+
+
+'''
+
+
+== 4. 白盒单元测试
+
+
+当前测试代码位于 `src/test/java/com/iam/`，共 3 个测试类、12 个 JUnit 5 测试。
+
+[cols="1,1,1",options="header"]
+|===
+|测试类 |数量 |覆盖内容
+
+|`com.iam.common.LoginGuardTest` |3 |连续 5 次失败后锁定；登录成功清零；账号大小写与空格归一
+|`com.iam.auth.AuthServiceTest` |5 |账号不存在返回 401；密码错误返回 401 且不建会话；李四正常登录返回 2 枚权限；张伟角色 8 枚 + 直接 1 枚合并为 9 枚；管理员返回 20 枚权限和 7 个菜单
+|`com.iam.apply.ApplyServiceTest` |4 |跨部门审批返回 403 且不写授权；同部门审批通过后写直接权限并踢会话；超级管理员跳过部门校验；超级管理员待办走全量查询分支
+|===
+
+
+运行命令：
+
+[source,powershell]
+----
+cd C:\Users\27642\Documents\Codex\2026-10-16\yu\outputs\iam-backend
+$env:JAVA_HOME = 'C:\Users\27642\AppData\Local\Programs\Eclipse Adoptium\jdk-21.0.12.1+1'
+& 'C:\Users\27642\Maven\apache-maven-3.10.0\bin\mvn.cmd' clean test
+----
+
+
+预期汇总：
+
+[source,text]
+----
+Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+----
+
+
+'''
+
+
+== 5. JaCoCo 覆盖率报告
+
+
+`pom.xml` 已配置 `jacoco-maven-plugin 0.8.12`：
+
+* `prepare-agent` 在测试 JVM 启动前注入覆盖率代理；
+* `report` 绑定在 `test` 阶段，测试完成后生成 HTML/XML。
+
+生成命令：
+
+[source,powershell]
+----
+& 'C:\Users\27642\Maven\apache-maven-3.10.0\bin\mvn.cmd' clean test
+----
+
+
+报告位置：
+
+[cols="1,1",options="header"]
+|===
+|文件 |用途
+
+|`target/site/jacoco/index.html` |总览入口，浏览器直接打开
+|`target/site/jacoco/jacoco.xml` |CI 或 SonarQube 可读取的机器数据
+|`target/site/jacoco/com.iam.*/index.html` |按包、类、方法下钻
+|===
+
+
+指标含义：
+
+[cols="1,1",options="header"]
+|===
+|指标 |含义
+
+|Instructions |JVM 字节码指令命中比例，粒度最细
+|Branches |`if/else`、循环、逻辑表达式的分支覆盖比例
+|Lines |可执行代码行命中比例
+|Methods |至少执行一次的方法比例
+|Classes |至少执行一个方法的类比例
+|===
+
+
+颜色说明：
+
+* 绿色：已覆盖；
+* 黄色：部分覆盖，例如只执行了 `if` 的一个分支；
+* 红色：未覆盖。
+
+一期以核心业务类为白盒重点：`LoginGuard`、`AuthService`、`ApplyService`。Controller 与 Mapper 的完整数据库路径由 Newman 集成测试覆盖，因此总覆盖率不应只按 Controller 数量判断。
+
+'''
+
+
+== 6. Newman 自动化集成测试
+
+
+=== 6.1 集合结构
+
+
+`IAM-API.postman_collection.json` 当前包含：
+
+[cols="1,1,1",options="header"]
+|===
+|文件夹 |请求数 |重点
+
+|01 认证 |5 |管理员、李四、张伟登录，当前用户，错误密码
+|02 用户管理 |15 |用户 CRUD、角色分配、越权 403
+|03 角色管理 |7 |角色 CRUD、权限全量覆盖、非法 ID
+|04 权限目录 |5 |权限列表、系统筛选、新增和删除
+|05 角色权限生效（王五） |8 |分配角色、旧 Token 失效、重新登录、报表导出
+|06 申请审批闭环（部门隔离） |22 |非法目标、重复申请、同部门通过、跨部门 403、管理员全量待办、驳回
+|07 清理与锁定策略（放最后） |17 |恢复种子授权、删除临时数据、连续失败锁定
+|合计 |79 |全部按文件夹顺序执行
+|===
+
+
+集合使用 `pm.collectionVariables` 自动传递 `sessionId`、申请单号、角色 ID、权限 ID 和临时账号，不依赖手工复制。
+
+=== 6.2 一键运行
+
+
+首次安装 Newman：
+
+[source,powershell]
+----
+npm install -g newman
+----
+
+
+运行前重置数据库并启动后端，然后执行：
+
+[source,powershell]
+----
+cd C:\Users\27642\Documents\Codex\2026-10-16\yu\outputs\iam-backend
+newman run IAM-API.postman_collection.json
+----
+
+
+若 PowerShell 禁止执行 npm 的 `.ps1` 包装脚本，可直接调用：
+
+[source,powershell]
+----
+& 'C:\Users\27642\AppData\Roaming\npm\newman.cmd' run IAM-API.postman_collection.json
+----
+
+
+=== 6.3 预期结果
+
+
+2026-10-24 已在本地 MySQL 8 与更新后的后端 JAR 上实际执行通过：
+
+[source,text]
+----
+requests:       79
+test-scripts:   79
+assertions:    113
+failed:          0
+----
+
+
+验收时预期所有 70+ 条请求全部 Pass。若出现失败，优先检查：
+
+. 数据库是否已执行最新 `db/reset.sql`；
+. 后端是否已用最新源码重新打包，而不是旧 JAR；
+. 8080 端口是否存在旧服务实例；
+. 被测试用户是否处于其他轮次遗留的 15 分钟锁定期；
+. `baseUrl` 集合变量是否仍为 `http://127.0.0.1:8080`。
+
+生成 JSON 报告便于留档：
+
+[source,powershell]
+----
+newman run IAM-API.postman_collection.json --reporters cli,json --reporter-json-export newman-report.json
+----
+
+
+'''
+
+
+== 7. 建议执行顺序
+
+
+. `mvn clean test`：运行 12 个 JUnit 测试并生成 JaCoCo 报告；
+. 打开 `target/site/jacoco/index.html` 检查核心类覆盖率；
+. 执行 `db/reset.sql`；
+. 重新打包并启动最新后端；
+. 按 Postman 文件夹顺序或直接用 Newman 跑完 79 个请求；
+. 保存 Newman 终端输出或 JSON 报告作为验收证据。

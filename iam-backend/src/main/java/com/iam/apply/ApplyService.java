@@ -71,9 +71,13 @@ public class ApplyService {
         return list;
     }
 
-    public List<Map<String, Object>> byStatus(int status) {
+    public List<Map<String, Object>> byStatus(int status, long approverId) {
         List<Map<String, Object>> list = new ArrayList<>();
-        for (ApplyMapper.ApplyRow r : applyMapper.listByStatus(status)) { list.add(view(r)); }
+        // 超级管理员（ADMIN 角色）看全系统；其他审批人只看自己管辖部门
+        List<ApplyMapper.ApplyRow> rows = applyMapper.isAdmin(approverId) > 0
+                ? applyMapper.listAllByStatus(status)
+                : applyMapper.listByStatus(status, approverId);
+        for (ApplyMapper.ApplyRow r : rows) { list.add(view(r)); }
         return list;
     }
 
@@ -81,6 +85,17 @@ public class ApplyService {
     public Map<String, Object> decide(long id, String action, String comment, long approverId) {
         ApplyMapper.ApplyRow row = applyMapper.findById(id);
         if (row == null) { throw new BizException(404, "申请单不存在"); }
+
+        // 部门隔离：超级管理员可跨部门；其他审批人必须是申请人所在部门的主管
+        boolean admin = applyMapper.isAdmin(approverId) > 0;
+        if (!admin) {
+            Long managerDept = applyMapper.managedDepartmentOf(approverId);
+            Long applicantDept = applyMapper.departmentOfUser(row.getApplicantId());
+            if (managerDept == null || applicantDept == null || !managerDept.equals(applicantDept)) {
+                throw new BizException(403, "无权审批其他部门的申请");
+            }
+        }
+
         if (row.getStatus() == null || row.getStatus() != 0) { throw new BizException(409, "该申请已处理"); }
 
         String act = action == null ? "" : action.trim().toUpperCase(Locale.ROOT);

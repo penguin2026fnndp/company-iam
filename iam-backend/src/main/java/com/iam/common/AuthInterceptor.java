@@ -27,6 +27,8 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        // CORS 预检请求不携带 Authorization，直接放行
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) { return true; }
         if (!(handler instanceof HandlerMethod method)) { return true; }
         String path = request.getRequestURI();
         if (path.equals("/api/ping") || path.equals("/api/auth/login")) { return true; }

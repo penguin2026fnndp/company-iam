@@ -98,11 +98,23 @@ public class AuthService {
     private List<Map<String, Object>> menus(Set<String> perms) {
         List<Map<String, Object>> list = new ArrayList<>();
         add(list, perms, "ME:VIEW", "/perms", "我的权限");
+        addPlain(list, "/applies", "我的申请");
+        if (perms.contains("APPLY:APPROVE")) {
+            addPlain(list, "/approvals", "待我审批");
+        }
         add(list, perms, "USER:VIEW", "/users", "用户管理");
         add(list, perms, "ROLE:VIEW", "/roles", "角色管理");
         add(list, perms, "PERM:VIEW", "/permissions", "权限目录");
         add(list, perms, "FIN:RPT:VIEW", "/report", "财务报表");
         return list;
+    }
+
+    private void addPlain(List<Map<String, Object>> list, String path, String label) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("path", path);
+        m.put("label", label);
+        m.put("perm", "");
+        list.add(m);
     }
 
     private void add(List<Map<String, Object>> list, Set<String> perms, String perm, String path, String label) {

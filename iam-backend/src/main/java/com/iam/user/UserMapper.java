@@ -21,6 +21,8 @@ public interface UserMapper {
         private String phone;
         private String passwordHash;
         private Integer status;
+        private Long departmentId;
+        private String departmentName;
         private LocalDateTime createdAt;
         private String roleNames;
         private Integer permCount;
@@ -37,6 +39,10 @@ public interface UserMapper {
         public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
         public Integer getStatus() { return status; }
         public void setStatus(Integer status) { this.status = status; }
+        public Long getDepartmentId() { return departmentId; }
+        public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
+        public String getDepartmentName() { return departmentName; }
+        public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
         public LocalDateTime getCreatedAt() { return createdAt; }
         public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
         public String getRoleNames() { return roleNames; }
@@ -46,7 +52,8 @@ public interface UserMapper {
     }
 
     String BASE = """
-            SELECT u.id, u.account, u.name, u.phone, u.password_hash, u.status, u.created_at,
+            SELECT u.id, u.account, u.name, u.phone, u.password_hash, u.status,
+                   u.department_id, d.name AS department_name, u.created_at,
                    (SELECT GROUP_CONCAT(r.name ORDER BY r.id SEPARATOR ' / ')
                       FROM sys_user_role ur JOIN sys_role r ON r.id = ur.role_id
                      WHERE ur.user_id = u.id) AS role_names,
@@ -56,6 +63,7 @@ public interface UserMapper {
                       JOIN sys_role_permission rp ON rp.role_id = ur.role_id
                      WHERE ur.user_id = u.id) AS perm_count
             FROM sys_user u
+            LEFT JOIN sys_department d ON d.id = u.department_id
             """;
 
     @Select(BASE + " WHERE u.account = #{account}")

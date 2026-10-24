@@ -46,6 +46,9 @@ public interface RoleMapper {
     @Select("SELECT COUNT(*) FROM sys_user_role WHERE role_id = #{roleId}")
     long memberCount(@Param("roleId") long roleId);
 
+    @Delete("DELETE FROM sys_user_role WHERE role_id = #{roleId}")
+    int unbindUsers(@Param("roleId") long roleId);
+
     @Select("SELECT COUNT(*) FROM sys_role WHERE id = #{id}")
     long countById(@Param("id") long id);
 

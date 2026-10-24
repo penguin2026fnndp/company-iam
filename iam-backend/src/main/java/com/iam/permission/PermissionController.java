@@ -16,10 +16,15 @@ import java.util.Map;
 @RequestMapping("/api/permissions")
 public class PermissionController {
     private final PermissionMapper permissionMapper;
+    private final PermissionService permissionService;
 
-    public PermissionController(PermissionMapper permissionMapper) {
+    public PermissionController(PermissionMapper permissionMapper, PermissionService permissionService) {
         this.permissionMapper = permissionMapper;
+        this.permissionService = permissionService;
     }
+
+    public record CreateReq(String sysCode, String sysName, String moduleName, String funcCode,
+                            String funcName, String action, String permCode, Integer sortNo) {}
 
     @Operation(summary = "权限列表", description = "按系统筛选、按权限码或功能名搜索")
     @GetMapping
@@ -46,5 +51,21 @@ public class PermissionController {
     @RequirePerm("PERM:VIEW")
     public Result systems() {
         return Result.ok(permissionMapper.systems());
+    }
+
+    @Operation(summary = "新增权限点", description = "权限码唯一；新增后可在角色矩阵中勾选")
+    @PostMapping
+    @RequirePerm("PERM:ADD")
+    public Result create(@RequestBody CreateReq req) {
+        return Result.ok(permissionService.create(req.sysCode(), req.sysName(), req.moduleName(),
+                req.funcCode(), req.funcName(), req.action(), req.permCode(), req.sortNo()));
+    }
+
+    @Operation(summary = "删除权限点", description = "物理删除；角色权限与用户直接权限随外键级联解除")
+    @DeleteMapping("/{id}")
+    @RequirePerm("PERM:DELETE")
+    public Result delete(@PathVariable long id) {
+        permissionService.delete(id);
+        return Result.ok();
     }
 }

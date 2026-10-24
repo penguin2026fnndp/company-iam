@@ -55,6 +55,11 @@ public class LoginGuard {
         attempts.remove(key(account));
     }
 
+    /** 是否处于锁定期 */
+    public boolean isLocked(String account) {
+        return lockedMillis(account) > 0;
+    }
+
     private String key(String account) {
         return account == null ? "" : account.trim().toUpperCase(Locale.ROOT);
     }

@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>统一权限中心 · 前后端联调版</title>
+<style>
+
+:root{
+  --paper:#f3f4f5;
+  --surface:#ffffff;
+  --surface-2:#f8f9fa;
+  --line:#e2e5e8;
+  --line-2:#ccd2d8;
+  --ink:#1b1d20;
+  --ink-2:#4d545b;
+  --ink-3:#7d858d;
+  --auth:#17497f;
+  --auth-bg:#ecf2f9;
+  --auth-line:#b8cde3;
+  --grant:#0f6e56;
+  --grant-bg:#e5f4ee;
+  --add:#185fa5;
+  --add-bg:#e8f1fa;
+  --deny:#a32d2d;
+  --deny-bg:#fbeaea;
+  --except:#534ab7;
+  --except-bg:#eeedfd;
+  --sens:#854f0b;
+  --sens-bg:#fbf0db;
+  --rail:#1a1e22;
+  --mono:ui-monospace,"Cascadia Mono","Consolas","Courier New",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.6;font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+/* 登录态：隐藏应用外壳，登录页占满整屏 */
+body.is-login .rail, body.is-login .topbar{display:none}
+body.is-login .app{grid-template-columns:1fr}
+body.is-login .viewport{padding:0;max-width:none}
+.lg-label{display:block;font-size:12px;color:var(--ink-2);margin:0 0 4px}
+.lg-err{border:1px solid #eecaca;background:var(--deny-bg);color:#7d2222;font-size:12.5px;border-radius:6px;padding:6px 9px;margin-bottom:10px}
+.acct{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding:6px 0;font-size:12.5px;cursor:pointer}
+.acct:last-child{border-bottom:0}
+.acct:hover{color:var(--auth)}
+.acct .n{font-family:var(--mono);color:var(--ink-3)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--auth);text-decoration:none}
+h1,h2,h3,h4{margin:0;font-weight:600}
+.app{display:grid;grid-template-columns:214px minmax(0,1fr);min-height:100vh}
+
+/* ---------- 左侧导航 ---------- */
+.rail{
+  position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--rail);
+  color:#c7ced4;padding:18px 12px 14px;display:flex;flex-direction:column;gap:16px;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 8px 14px;border-bottom:1px solid rgba(255,255,255,.09)}
+.mark{
+  width:30px;height:30px;flex:0 0 30px;border-radius:8px;background:#2b6da8;
+  color:#fff;display:grid;place-items:center;font-size:15px;font-weight:600;letter-spacing:.02em;
+}
+.b-name{color:#fff;font-size:13.5px;font-weight:600;letter-spacing:.01em}
+.b-sub{font-size:11px;color:#8b959d;margin-top:1px}
+.nav-g{display:flex;flex-direction:column;gap:2px}
+.nav-t{font-size:11.5px;color:#7d878f;padding:6px 9px 4px}
+.nav-i{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  background:none;border:0;border-radius:6px;padding:7px 9px;text-align:left;
+  color:#c7ced4;font-size:13px;cursor:pointer;width:100%;
+}
+.nav-i:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-i[aria-current="true"]{background:rgba(72,140,200,.20);color:#fff;box-shadow:inset 2px 0 0 #5b9fd8}
+.nav-i .pin{font-size:10.5px;color:#0f6e56;background:rgba(15,110,86,.22);border-radius:3px;padding:0 5px}
+.rail-foot{margin-top:auto;font-size:11px;color:#77808a;line-height:1.5;padding:10px 9px 0;border-top:1px solid rgba(255,255,255,.09)}
+
+/* ---------- 顶部作用域条 ---------- */
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:10px 22px;background:var(--surface);border-bottom:1px solid var(--line);
+}
+.scope{display:flex;align-items:center;gap:9px;min-width:0}
+.scope-k{font-size:11.5px;color:var(--ink-3)}
+.scope select{
+  border:1px solid var(--line-2);background:var(--surface);border-radius:6px;
+  padding:4px 8px;font-size:13px;max-width:280px;
+}
+.who-role{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-right{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.chip{
+  font-size:11.5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);
+  border-radius:4px;padding:2px 8px;white-space:nowrap;
+}
+.chip.warn{color:var(--sens);background:var(--sens-bg);border-color:#ecd9b4}
+
+/* ---------- 内容区 ---------- */
+.viewport{padding:20px 22px 56px;max-width:1500px;width:100%}
+.screen[hidden]{display:none}
+.screen-h{margin-bottom:14px}
+.screen-h h1{font-size:20px;letter-spacing:-.01em}
+.screen-h .lead{color:var(--ink-2);font-size:13px;margin:4px 0 0;max-width:78ch}
+.cov{font-size:11.5px;color:var(--ink-3);margin-top:6px}
+.cov b{font-weight:500;color:var(--ink-2);font-family:var(--mono);font-size:11px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.panel + .panel{margin-top:14px}
+.panel-h{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 14px;border-bottom:1px solid var(--line);background:var(--surface);
+}
+.panel-h h2{font-size:14px}
+.panel-h .hint{font-size:11.5px;color:var(--ink-3);font-weight:400}
+.panel-b{padding:14px}
+.panel-b.flush{padding:0;overflow-x:auto}
+.grid-2{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
+.grid-2.wide{grid-template-columns:minmax(0,1fr) 380px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.stack.sm{gap:8px}
+
+/* ---------- 表格 ---------- */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{
+  text-align:left;font-weight:500;font-size:11.5px;color:var(--ink-3);
+  padding:8px 12px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap;
+}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr:hover{background:#f8fafb}
+.tbl .num{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.tbl .who{font-weight:500}
+.tbl .sub{font-size:11.5px;color:var(--ink-3);margin-top:1px}
+.tbl .r{text-align:right}
+.tbl.tight td{padding:7px 12px}
+
+/* ---------- 标签 ---------- */
+.tag{
+  display:inline-flex;align-items:center;gap:3px;font-size:11px;line-height:1.5;
+  padding:1px 6px;border-radius:4px;border:1px solid transparent;white-space:nowrap;font-weight:500;
+}
+.tag.grant{color:var(--grant);background:var(--grant-bg);border-color:#c9e6db}
+.tag.add{color:var(--add);background:var(--add-bg);border-color:#c9dcef}
+.tag.deny{color:var(--deny);background:var(--deny-bg);border-color:#eecaca}
+.tag.except{color:var(--except);background:var(--except-bg);border-color:#d6d3f4}
+.tag.sens{color:var(--sens);background:var(--sens-bg);border-color:#ecd9b4}
+.tag.mute{color:var(--ink-3);background:var(--surface-2);border-color:var(--line)}
+.tag.pend{color:var(--auth);background:var(--auth-bg);border-color:var(--auth-line)}
+.tag.plain{color:var(--ink-2);background:none;border-color:var(--line-2)}
+.pm{font-family:var(--mono);font-weight:600;font-size:12px}
+.pm.plus{color:var(--add)}
+.pm.minus{color:var(--deny)}
+
+/* ---------- 按钮 ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);
+  color:var(--ink);border-radius:6px;padding:5px 11px;font-size:12.5px;cursor:pointer;
+}
+.btn:hover{background:var(--surface-2)}
+.btn.pri{background:var(--auth);border-color:var(--auth);color:#fff}
+.btn.pri:hover{background:#123a66}
+.btn.danger{color:var(--deny);border-color:#e0b4b4;background:#fff}
+.btn.ghost{border-color:transparent;background:none;color:var(--auth);padding-left:0}
+.btn.sm{padding:3px 8px;font-size:11.5px}
+.viewport.is-ro .pick input{pointer-events:none;opacity:.45}
+.viewport.is-ro .inp,.viewport.is-ro textarea{pointer-events:none;opacity:.6}
+.viewport.is-ro .only-edit{display:none !important}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,.nav-i:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{
+  outline:2px solid #2b6da8;outline-offset:2px;
+}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ---------- KPI 条 ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);background:var(--surface);border-radius:10px;overflow:hidden}
+.kpi{padding:12px 14px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:0}
+.kpi .k{font-size:11.5px;color:var(--ink-3)}
+.kpi .v{font-size:21px;font-weight:600;letter-spacing:-.01em;margin-top:2px}
+.kpi .v small{font-size:12px;font-weight:400;color:var(--ink-3);margin-left:3px}
+.kpi .d{font-size:11px;color:var(--ink-3);margin-top:1px}
+
+/* ---------- 提示条 ---------- */
+.banner{
+  display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border-radius:7px;font-size:12.5px;
+  border:1px solid var(--auth-line);background:var(--auth-bg);color:#12395f;margin-bottom:12px;
+}
+.banner[hidden]{display:none}
+.banner.warn{border-color:#ecd9b4;background:var(--sens-bg);color:#6b3f08}
+.banner.deny{border-color:#eecaca;background:var(--deny-bg);color:#7d2222}
+.banner.mute{border-color:var(--line);background:var(--surface-2);color:var(--ink-2)}
+.banner b{font-weight:600}
+
+/* ---------- 权限台账 ---------- */
+.formula{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px;color:var(--ink-2)}
+.fbox{border:1px solid var(--line);background:var(--surface-2);border-radius:6px;padding:6px 9px;text-align:center;min-width:70px}
+.fbox .n{display:block;font-size:16px;font-weight:600;color:var(--ink);font-family:var(--mono)}
+.fbox .l{display:block;font-size:10.5px;color:var(--ink-3)}
+.frows{border:1px solid var(--line);border-radius:7px;padding:3px 10px;background:var(--surface-2)}
+.frow{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)}
+.frow:last-child{border-bottom:0}
+.frow .fl{font-size:12px;color:var(--ink-2)}
+.frow .fn{margin-left:auto;font-family:var(--mono);font-weight:600;font-size:13.5px;color:var(--ink)}
+.frow.total .fl{color:var(--ink);font-weight:500}
+.frow.total .fn{font-size:16px;color:var(--auth)}
+.pick-row.sel{background:var(--auth-bg);box-shadow:inset 2px 0 0 var(--auth)}
+.list-item{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:11px 14px;cursor:pointer}
+.list-item:last-child{border-bottom:0}
+.list-item:hover{background:#f8fafb}
+.list-item.sel{background:var(--auth-bg);box-shadow:inset 3px 0 0 var(--auth)}
+.list-item .t{font-size:13px;font-weight:500;color:var(--ink)}
+.list-item .m{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.list-item .r{float:right;font-size:11px;color:var(--ink-3)}
+.fop{color:var(--ink-3);font-size:14px}
+.equiv{font-family:var(--mono);font-weight:600;color:var(--ink)}
+
+/* ---------- 审批链 ---------- */
+.steps{display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:10px;position:relative;padding-bottom:14px}
+.step:last-child{padding-bottom:0}
+.step::before{
+  content:"";position:absolute;left:9px;top:20px;bottom:0;width:1px;background:var(--line-2);
+}
+.step:last-child::before{display:none}
+.dot{
+  width:19px;height:19px;flex:0 0 19px;border-radius:50%;border:1px solid var(--line-2);
+  background:var(--surface);display:grid;place-items:center;font-size:10px;color:var(--ink-3);z-index:1;
+}
+.step.done .dot{background:var(--grant);border-color:var(--grant);color:#fff}
+.step.cur .dot{background:var(--auth);border-color:var(--auth);color:#fff;box-shadow:0 0 0 3px var(--auth-bg)}
+.step .s-t{font-size:12.5px;font-weight:500}
+.step .s-d{font-size:11.5px;color:var(--ink-3);margin-top:1px}
+.step .s-n{font-size:11px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:3px 7px;margin-top:4px;display:inline-block}
+
+/* ---------- 表单 ---------- */
+.field{margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+.field > label{display:block;font-size:12px;color:var(--ink-2);margin-bottom:4px}
+.field .need{color:var(--deny)}
+.inp{
+  width:100%;border:1px solid var(--line-2);border-radius:6px;padding:6px 9px;font-size:13px;background:var(--surface);
+}
+textarea.inp{min-height:64px;resize:vertical;line-height:1.55}
+.radio-row{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);padding-top:3px}
+.radio-row label{display:flex;align-items:center;gap:5px;cursor:pointer}
+.help{font-size:11.5px;color:var(--ink-3);margin-top:4px}
+
+/* ---------- 选择列表 ---------- */
+.pick{border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.pick-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:12.5px}
+.pick-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);font-size:12.5px}
+.pick-row:last-child{border-bottom:0}
+.pick-row:hover{background:#f8fafb}
+.pick-row .code{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-left:auto}
+
+/* ---------- 小结构 ---------- */
+.kv{display:grid;grid-template-columns:88px minmax(0,1fr);gap:5px 10px;font-size:12.5px}
+.kv dt{color:var(--ink-3)}
+.kv dd{margin:0;color:var(--ink)}
+.muted{color:var(--ink-3);font-size:11.5px}
+.rule{height:1px;background:var(--line);margin:12px 0}
+.sec-t{font-size:12px;color:var(--ink-3);margin:0 0 7px}
+.mono{font-family:var(--mono)}
+.right{border-left:1px solid var(--line);padding-left:14px}
+.divider{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3);margin:10px 0}
+.divider::before,.divider::after{content:"";height:1px;background:var(--line);flex:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.fchip{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer;color:var(--ink-2)}
+.fchip[aria-pressed="true"]{background:var(--auth);border-color:var(--auth);color:#fff}
+.tabs{display:flex;gap:16px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tab{background:none;border:0;padding:7px 0;font-size:13px;color:var(--ink-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--auth);font-weight:500}
+.tree{font-size:12.5px}
+.tree .t1{font-weight:600;padding:5px 0}
+.tree .t2{padding:4px 0 4px 16px;color:var(--ink-2)}
+.tree .t3{padding:4px 0 4px 32px;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.tree .t3 .code{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-left:auto}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--auth-bg);color:var(--auth);display:grid;place-items:center;font-size:11.5px;font-weight:600;flex:0 0 26px}
+.userline{display:flex;align-items:center;gap:8px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-3)}
+.bar{height:6px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.bar .b-base{background:#9fb3c6}
+.bar .b-add{background:#4a8bc2}
+.bar .b-exc{background:#7d75d0}
+.bar .b-deny{background:#c46b6b}
+.timeline{list-style:none;margin:0;padding:0;font-size:12px}
+.timeline li{display:grid;grid-template-columns:72px 10px minmax(0,1fr);gap:8px;padding-bottom:9px}
+.timeline li span:first-child{color:var(--ink-3);font-family:var(--mono);font-size:11px}
+.timeline .d{justify-self:center;width:7px;height:7px;border-radius:50%;background:var(--line-2);margin-top:5px}
+.timeline li.on .d{background:var(--auth)}
+.login-wrap{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) 420px;background:var(--surface)}
+.login-side{background:var(--rail);color:#cfd6dc;padding:44px 46px;display:flex;flex-direction:column;justify-content:space-between}
+.login-side h1{font-size:26px;color:#fff;line-height:1.35;letter-spacing:-.01em;max-width:16em}
+.login-side p{color:#9aa4ad;font-size:13px;max-width:30em;margin:14px 0 0}
+.login-form{display:flex;flex-direction:column;justify-content:center;padding:44px 48px;gap:0}
+.login-form h2{font-size:18px;margin-bottom:4px}
+.login-form .sub{font-size:12.5px;color:var(--ink-3);margin-bottom:22px}
+.login-form .inp{padding:8px 10px;margin-bottom:12px}
+.login-note{font-size:11.5px;color:var(--ink-3);margin-top:16px;line-height:1.7}
+@media (max-width:1100px){
+  .app{grid-template-columns:1fr}
+  .rail{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 12px}
+  .brand{border:0;padding:0;flex:0 0 auto}
+  #nav{display:flex;flex:1 1 auto;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+  .nav-g{flex-direction:row;flex-wrap:wrap;gap:4px}
+  .nav-i{width:auto;padding:4px 10px;font-size:12px;border:1px solid rgba(255,255,255,.14)}
+  .nav-t{display:none}
+  .rail-foot{display:none}
+  .grid-2,.grid-2.wide{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .login-wrap{grid-template-columns:1fr}
+  .login-side{padding:28px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+
+.mx th{text-align:center}
+.mx td{text-align:center;padding:6px 8px}
+.mx td:first-child{text-align:left;width:38%}
+.mx .on{color:var(--grant);font-weight:600}
+.mx .off{color:#c9ced3}
+.op{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 4px;color:var(--ink-3);margin-right:3px;display:inline-block;line-height:1.5}
+.op.on{color:var(--grant);border-color:#c9e6db;background:var(--grant-bg)}
+.gap{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;font-size:12.5px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.gap:last-child{border-bottom:0}
+.gap b{font-weight:600;color:var(--ink)}
+.gap .no{color:var(--deny);font-family:var(--mono);font-size:11.5px}
+
+
+</style>
+<style>
+  .loading,.empty{padding:32px 16px;text-align:center;color:var(--ink-3);font-size:13px}
+  .toast-host{position:fixed;right:22px;bottom:22px;z-index:99;display:flex;flex-direction:column;gap:10px}
+  .toast{
+    min-width:250px;max-width:400px;padding:11px 14px;border-radius:8px;background:#1f2937;color:#fff;
+    font-size:13px;line-height:1.55;box-shadow:0 10px 30px rgba(0,0,0,.18);
+    border-left:3px solid #5b9fd8;animation:toastIn .18s ease-out
+  }
+  .toast.err{background:#7d2222;border-left-color:#f0a6a6}
+  .toast.ok{background:#0f4c3a;border-left-color:#7fd3b5}
+  @keyframes toastIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .apply-grid{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px 14px;align-items:start}
+  .apply-grid > label{padding-top:8px;font-size:12.5px;color:var(--ink-2)}
+  .apply-grid .help{font-size:11.5px;color:var(--ink-3);margin-top:4px;line-height:1.6}
+  .form-error{color:var(--deny);background:var(--deny-bg);border:1px solid #eecaca;border-radius:6px;padding:7px 10px;font-size:12.5px;margin-bottom:10px}
+  .row-actions{display:flex;gap:6px;justify-content:flex-end}
+  .perm-cell{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+  .modal-mask{position:fixed;inset:0;background:rgba(17,24,39,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal{background:#fff;border-radius:12px;width:min(580px,100%);max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .modal-head h3{margin:0;font-size:15px;font-weight:600}
+  .modal-close{border:0;background:none;font-size:20px;line-height:1;color:var(--ink-3);cursor:pointer;padding:0 2px}
+  .modal-body{padding:16px 18px}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--line)}
+  .mfield{margin-bottom:12px}
+  .mfield:last-child{margin-bottom:0}
+  .mfield label{display:block;font-size:12px;color:var(--ink-2);margin-bottom:4px}
+  .page-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+  .perm-groups{max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:10px}
+  .perm-group{border-bottom:1px solid var(--line);padding:8px 12px}
+  .perm-group:last-child{border-bottom:0}
+  .perm-group-h{font-size:11.5px;color:var(--ink-3);margin-bottom:4px}
+  .perm-check{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12.5px;cursor:pointer}
+  .perm-check code{margin-left:auto;font-size:10.5px;color:var(--ink-3);font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="rail">
+    <div class="brand">
+      <div class="mark">权</div>
+      <div>
+        <div class="b-name">统一权限中心</div>
+        <div class="b-sub">市政公司 · 联调版</div>
+      </div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="rail-foot">
+      数据来自 MySQL · 会话由后端管理<br>
+      <span id="railApi"></span>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="scope">
+        <span class="scope-k">当前登录</span>
+        <span class="who-role" id="whoRole"></span>
+      </div>
+      <div class="top-right">
+        <span class="chip" id="whoName">—</span>
+        <span class="chip" id="sessChip">会话至 23:59</span>
+        <button class="btn sm" id="logout">退出登录</button>
+      </div>
+    </header>
+    <div class="viewport" id="view"></div>
+  </div>
+</div>
+<div class="toast-host" id="toastHost"></div>
+
+<script>
+/* ============================================================
+ * 后端地址
+ * 若要连接云服务器，只需将 API_BASE_URL 修改为
+ * http://<服务器公网IP>:8080 即可
+ * ============================================================ */
+const API_BASE_URL = 'http://127.0.0.1:8080';
+
+const SESSION_KEY = 'iam_session';
+const state = {
+  sessionId: '',
+  user: null,
+  roles: [],
+  permissions: [],
+  menus: [],
+  expireAt: '',
+  active: ''
+};
+
+const el = id => document.getElementById(id);
+
+function escapeHtml(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+/* ---------------- Toast ---------------- */
+function toast(message, type) {
+  const box = document.createElement('div');
+  box.className = 'toast ' + (type || '');
+  box.textContent = message;
+  el('toastHost').appendChild(box);
+  setTimeout(() => box.remove(), 4200);
+}
+
+/* ---------------- 请求 ---------------- */
+async function api(path, options = {}) {
+  const { method = 'GET', body = null, auth = true } = options;
+  const headers = {};
+  if (auth && state.sessionId) headers['Authorization'] = 'Bearer ' + state.sessionId;
+  if (body) headers['Content-Type'] = 'application/json';
+
+  let res;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined
+    });
+  } catch (e) {
+    return { code: -1, message: `无法连接后端（${API_BASE_URL}），请确认服务已启动` };
+  }
+
+  let data;
+  try {
+    data = await res.json();
+  } catch (e) {
+    return { code: -1, message: '后端返回的不是合法 JSON' };
+  }
+
+  if (data.code === 403) {
+    const perm = data.data && data.data.requiredPerm ? data.data.requiredPerm : '未知';
+    toast(`越权拦截生效：缺少权限 ${perm}`, 'err');
+  }
+  if (auth && (res.status === 401 || data.code === 401)) {
+    clearSession();
+    renderLogin('会话已失效，请重新登录');
+  }
+  return data;
+}
+
+/* ---------------- 会话 ---------------- */
+function clearSession() {
+  state.sessionId = '';
+  state.user = null;
+  state.roles = [];
+  state.permissions = [];
+  state.menus = [];
+  state.expireAt = '';
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function saveSession(data) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({
+    sessionId: data.sessionId,
+    user: { id: data.user.id, name: data.user.name, account: data.user.account },
+    roles: (data.roles || []).map(r => r.name || r),
+    menus: data.menus || [],
+    expireAt: data.expireAt || ''
+  }));
+}
+
+function readSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) { return null; }
+}
+
+function applySession(data) {
+  state.sessionId = data.sessionId || state.sessionId;
+  state.user = data.user || state.user;
+  state.roles = (data.roles || []).map(r => r.name || r);
+  state.permissions = data.permissions || [];
+  state.menus = data.menus || [];
+  state.expireAt = data.expireAt || state.expireAt;
+}
+
+/* ---------------- 登录页 ---------------- */
+function showLoginError(message) {
+  const box = el('lgErr');
+  if (!message) { box.hidden = true; box.textContent = ''; return; }
+  box.hidden = false;
+  box.textContent = message;
+}
+
+function renderLogin(message) {
+  document.body.classList.add('is-login');
+  el('whoName').textContent = '未登录';
+  el('whoRole').textContent = '';
+  el('nav').innerHTML = '';
+
+  el('view').innerHTML =
+    '<div class="login-wrap"><div class="login-side"><div>' +
+    '<div class="brand" style="border:0;padding:0"><div class="mark">权</div><div><div class="b-name">统一权限中心</div><div class="b-sub">市政公司</div></div></div>' +
+    '<h1>一个工号，通行全部业务系统</h1>' +
+    '<p>账号只表示"你是谁"，权限由角色实时计算。登录后只能看到与身份匹配的菜单，权限变更经审批后生效。</p>' +
+    '</div><div style="font-size:12px;color:#8b959d;line-height:1.9">10,000 员工 · 111 部门 · 18 系统 · 359 功能点<br>登录态由后端会话表管理 · 数据来自 MySQL</div></div>' +
+    '<div class="login-form"><h2>登录</h2><div class="sub">账号为工号，初始密码 123456</div>' +
+    '<div id="lgErr" class="lg-err"' + (message ? '' : ' hidden') + '>' + escapeHtml(message || '') + '</div>' +
+    '<label class="lg-label">工号</label><input id="lgAcc" class="inp" placeholder="SG900001" autocomplete="username">' +
+    '<label class="lg-label">密码</label><input id="lgPwd" class="inp" type="password" placeholder="••••••" autocomplete="current-password">' +
+    '<button class="btn pri" id="lgBtn" style="margin-top:8px;justify-content:center;padding:8px">登录</button>' +
+    '<div class="login-note">连续失败 5 次锁定 15 分钟；会话当日 23:59 失效。</div>' +
+    '<div class="rule"></div><div class="sec-t">演示账号（点击填入）</div><div id="lgList"></div></div></div>';
+
+  const accounts = [
+    { account: 'SG900001', label: '系统管理员', desc: '20 枚权限' },
+    { account: 'SG000101', label: '技术部主管', desc: '9 枚权限' },
+    { account: 'SG000102', label: '技术部员工', desc: '2 枚权限' },
+    { account: 'SG000103', label: '财务部员工', desc: '2 枚权限' },
+    { account: 'SG000108', label: '财务部主管', desc: '9 枚权限' }
+  ];
+  const box = el('lgList');
+  accounts.forEach(a => {
+    const d = document.createElement('div');
+    d.className = 'acct';
+    d.innerHTML = '<span>' + a.label + ' · ' + a.desc + '</span><span class="n">' + a.account + '</span>';
+    d.addEventListener('click', () => {
+      el('lgAcc').value = a.account;
+      el('lgPwd').value = '123456';
+      el('lgPwd').focus();
+    });
+    box.appendChild(d);
+  });
+
+  el('lgBtn').addEventListener('click', doLogin);
+  el('lgPwd').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  el('lgAcc').addEventListener('keydown', e => { if (e.key === 'Enter') el('lgPwd').focus(); });
+  el('lgAcc').focus();
+}
+
+async function doLogin() {
+  const account = el('lgAcc').value.trim();
+  const password = el('lgPwd').value;
+  showLoginError('');
+  if (!account || !password) { showLoginError('请输入工号和密码'); return; }
+
+  const btn = el('lgBtn');
+  btn.disabled = true;
+  btn.textContent = '登录中…';
+
+  const res = await api('/api/auth/login', {
+    method: 'POST',
+    body: { account, password },
+    auth: false
+  });
+
+  btn.disabled = false;
+  btn.textContent = '登录';
+
+  if (res.code !== 0) {
+    showLoginError(res.message || '登录失败');
+    return;
+  }
+
+  applySession(res.data);
+  saveSession(res.data);
+  showConsole();
+}
+
+/* ---------------- 主框架 ---------------- */
+function showConsole() {
+  document.body.classList.remove('is-login');
+  el('whoName').textContent = `${state.user.name} · ${state.user.account}`;
+  el('whoRole').textContent = state.roles.join(' / ') || '无角色';
+  el('sessChip').textContent = state.expireAt ? '会话至 ' + state.expireAt.slice(11, 16) : '会话有效';
+  el('railApi').textContent = 'API ' + API_BASE_URL;
+  buildNav();
+
+  const hashPath = location.hash.replace(/^#/, '');
+  const target = state.menus.find(m => m.path === hashPath) || state.menus[0];
+  if (target) { openMenu(target.path); }
+  else { el('view').innerHTML = '<div class="panel"><div class="panel-b muted">当前账号没有任何可访问菜单。</div></div>'; }
+}
+
+function buildNav() {
+  const nav = el('nav');
+  nav.innerHTML = '';
+  if (!state.menus.length) { return; }
+
+  const group = document.createElement('div');
+  group.className = 'nav-g';
+  group.innerHTML = '<div class="nav-t">功能菜单</div>';
+  state.menus.forEach(m => {
+    const b = document.createElement('button');
+    b.className = 'nav-i';
+    b.dataset.path = m.path;
+    b.textContent = m.label;
+    b.addEventListener('click', () => openMenu(m.path));
+    group.appendChild(b);
+  });
+  nav.appendChild(group);
+}
+
+async function openMenu(path) {
+  state.active = path;
+  if (location.hash !== '#' + path) { history.replaceState(null, '', '#' + path); }
+  document.querySelectorAll('.nav-i').forEach(b => {
+    if (b.dataset.path === path) { b.setAttribute('aria-current', 'true'); }
+    else { b.removeAttribute('aria-current'); }
+  });
+
+  const menu = state.menus.find(m => m.path === path) || { path, label: path, perm: '' };
+  el('view').innerHTML = '<div class="loading">加载中…</div>';
+
+  const renderer = views[path];
+  if (!renderer) {
+    el('view').innerHTML = pageHead(menu.label, '该菜单暂未实现页面。') +
+      '<div class="panel"><div class="empty">接口已就绪，页面待接入。</div></div>';
+    return;
+  }
+
+  try {
+    await renderer(menu);
+  } catch (e) {
+    el('view').innerHTML = pageHead(menu.label, '页面加载失败') +
+      '<div class="panel"><div class="empty">' + escapeHtml(e.message) + '</div></div>';
+  }
+}
+
+/* ---------------- 渲染工具 ---------------- */
+const views = {
+  '/perms': renderPerms,
+  '/users': renderUsers,
+  '/applies': renderApplies,
+  '/approvals': renderApprovals,
+  '/roles': renderRoles,
+  '/permissions': renderPermissions,
+  '/report': renderReport
+};
+
+function pageHead(title, lead) {
+  return '<div class="screen-h"><h1>' + escapeHtml(title) + '</h1><p class="lead">' + escapeHtml(lead) + '</p></div>';
+}
+
+function deniedCard(res) {
+  const perm = res && res.data && res.data.requiredPerm ? res.data.requiredPerm : '未知';
+  return '<div class="panel"><div class="panel-b" style="text-align:center;padding:30px">' +
+    '<div style="font-size:15px;font-weight:600;color:var(--deny)">403 · 无权限</div>' +
+    '<p class="muted" style="margin:8px 0 0">缺少权限码 <b style="font-family:var(--mono)">' + escapeHtml(perm) + '</b>，请求已被后端拦截。</p>' +
+    '</div></div>';
+}
+
+function statusTag(status) {
+  if (status === 0) { return '<span class="tag pend">待审批</span>'; }
+  if (status === 1) { return '<span class="tag grant">已通过</span>'; }
+  return '<span class="tag deny">已驳回</span>';
+}
+
+function typeLabel(type) {
+  return type === 'ROLE' ? '<span class="tag plain">角色</span>' : '<span class="tag plain">权限</span>';
+}
+
+function can(code) {
+  return state.permissions.includes(code);
+}
+
+function pageHeadAction(title, lead, actionsHtml) {
+  return '<div class="screen-h" style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">' +
+    '<div><h1>' + escapeHtml(title) + '</h1><p class="lead">' + escapeHtml(lead) + '</p></div>' +
+    '<div class="page-actions">' + actionsHtml + '</div></div>';
+}
+
+/**
+ * 通用表单弹窗。onSubmit(values) 返回接口响应；code=0 时自动关闭。
+ */
+function openFormModal(title, fields, submitText, onSubmit) {
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask';
+  const fieldHtml = fields.map(f => {
+    let control;
+    if (f.type === 'textarea') {
+      control = '<textarea class="inp" id="mf_' + f.name + '" style="min-height:62px" placeholder="' +
+        escapeHtml(f.placeholder || '') + '">' + escapeHtml(f.value || '') + '</textarea>';
+    } else {
+      control = '<input class="inp" id="mf_' + f.name + '" type="' + (f.type || 'text') + '" value="' +
+        escapeHtml(f.value || '') + '" placeholder="' + escapeHtml(f.placeholder || '') + '"' +
+        (f.readonly ? ' readonly' : '') + '>';
+    }
+    return '<div class="mfield"><label>' + escapeHtml(f.label) + (f.required ? ' *' : '') + '</label>' +
+      control + (f.help ? '<div class="help">' + escapeHtml(f.help) + '</div>' : '') + '</div>';
+  }).join('');
+
+  mask.innerHTML = '<div class="modal">' +
+    '<div class="modal-head"><h3>' + escapeHtml(title) + '</h3><button class="modal-close" data-close>×</button></div>' +
+    '<div class="modal-body"><div class="form-error" id="mErr" hidden></div>' + fieldHtml + '</div>' +
+    '<div class="modal-foot"><button class="btn" data-close>取消</button>' +
+    '<button class="btn pri" id="mSubmit">' + escapeHtml(submitText) + '</button></div></div>';
+
+  document.body.appendChild(mask);
+  const close = () => mask.remove();
+  mask.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+  mask.addEventListener('click', e => { if (e.target === mask) { close(); } });
+
+  const err = mask.querySelector('#mErr');
+  const showErr = msg => {
+    err.hidden = !msg;
+    err.textContent = msg || '';
+  };
+
+  const btn = mask.querySelector('#mSubmit');
+  btn.addEventListener('click', async () => {
+    const values = {};
+    fields.forEach(f => { values[f.name] = (mask.querySelector('#mf_' + f.name).value || '').trim(); });
+    const missing = fields.find(f => f.required && !values[f.name]);
+    if (missing) { showErr(missing.label + '不能为空'); return; }
+
+    btn.disabled = true;
+    btn.textContent = '提交中…';
+    try {
+      const res = await onSubmit(values);
+      if (res && res.code !== 0) {
+        showErr(res.message || '操作失败');
+        btn.disabled = false;
+        btn.textContent = submitText;
+        return;
+      }
+      close();
+    } catch (e) {
+      showErr(e.message || '操作失败');
+      btn.disabled = false;
+      btn.textContent = submitText;
+    }
+  });
+}
+
+/* ---------------- 我的权限 ---------------- */
+async function renderPerms(menu) {
+  const res = await api('/api/auth/me');
+  if (res.code !== 0) { el('view').innerHTML = deniedCard(res); return; }
+
+  const d = res.data;
+  state.permissions = d.permissions || [];
+  state.roles = (d.roles || []).map(r => r.name);
+
+  const roles = (d.roles || []).map(r => '<span class="tag pend">' + escapeHtml(r.name) + '</span>').join(' ');
+  const perms = state.permissions.map(p => '<span class="tag plain" style="font-family:var(--mono);font-size:11px">' + escapeHtml(p) + '</span>').join(' ');
+
+  el('view').innerHTML =
+    pageHead('我的权限', '实时计算：角色权限 ∪ 审批产生的直接权限。') +
+    '<div class="kpis">' +
+      '<div class="kpi"><div class="k">权限码</div><div class="v">' + state.permissions.length + '<small>枚</small></div><div class="d">后端计算</div></div>' +
+      '<div class="kpi"><div class="k">角色</div><div class="v">' + state.roles.length + '<small>个</small></div><div class="d">' + (state.roles.join(' / ') || '无') + '</div></div>' +
+      '<div class="kpi"><div class="k">可见菜单</div><div class="v">' + state.menus.length + '<small>项</small></div><div class="d">按权限过滤</div></div>' +
+      '<div class="kpi"><div class="k">账号</div><div class="v" style="font-size:15px;margin-top:6px">' + escapeHtml(d.user.account) + '</div><div class="d">' + escapeHtml(d.user.name) + '</div></div>' +
+    '</div>' +
+    '<div class="grid-2" style="margin-top:14px">' +
+      '<div class="panel"><div class="panel-h"><h2>权限码</h2><span class="hint">' + state.permissions.length + ' 枚</span></div>' +
+        '<div class="panel-b"><div style="display:flex;flex-wrap:wrap;gap:6px">' + (perms || '<span class="muted">无权限</span>') + '</div></div></div>' +
+      '<div class="panel"><div class="panel-h"><h2>角色</h2></div>' +
+        '<div class="panel-b">' + (roles || '<span class="muted">无角色</span>') +
+        '<div class="rule"></div><div class="muted">会话到期：' + escapeHtml(state.expireAt || '—') + '</div></div></div>' +
+    '</div>';
+}
+
+/* ---------------- 直接授权弹窗 ---------------- */
+async function openGrantModal(user) {
+  const [allRes, directRes] = await Promise.all([
+    api('/api/permissions'),
+    api('/api/users/' + user.id + '/permissions')
+  ]);
+
+  if (allRes.code !== 0) { toast(allRes.message || '加载权限清单失败', 'err'); return; }
+  if (directRes.code !== 0) { toast(directRes.message || '加载用户直接权限失败', 'err'); return; }
+
+  const all = allRes.data || [];
+  const checked = new Set((directRes.data || []).map(p => String(p.id)));
+  const groups = {};
+  all.forEach(p => {
+    const key = p.sysName || '其他';
+    (groups[key] = groups[key] || []).push(p);
+  });
+
+  const groupsHtml = Object.keys(groups).map(sys =>
+    '<div class="perm-group"><div class="perm-group-h">' + escapeHtml(sys) + '</div>' +
+    groups[sys].map(p =>
+      '<label class="perm-check"><input type="checkbox" data-perm-id="' + p.id + '"' +
+      (checked.has(String(p.id)) ? ' checked' : '') + '>' +
+      '<span>' + escapeHtml(p.funcName) + ' · ' + escapeHtml(p.action) + '</span>' +
+      '<code>' + escapeHtml(p.permCode) + '</code></label>'
+    ).join('') + '</div>'
+  ).join('');
+
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask';
+  mask.innerHTML = '<div class="modal">' +
+    '<div class="modal-head"><h3>授权 · ' + escapeHtml(user.name) + '（' + escapeHtml(user.account) + '）</h3>' +
+    '<button class="modal-close" data-close>×</button></div>' +
+    '<div class="modal-body">' +
+      '<div class="form-error" id="mErr" hidden></div>' +
+      '<div class="muted" style="font-size:12px;line-height:1.7">这里只管理"直接授权"（例外授予）；角色带来的权限不在此处显示。保存后该用户会被强制下线。</div>' +
+      '<div class="perm-groups">' + groupsHtml + '</div>' +
+    '</div>' +
+    '<div class="modal-foot"><span class="muted" id="grantCount" style="margin-right:auto"></span>' +
+    '<button class="btn" data-close>取消</button><button class="btn pri" id="mSave">保存</button></div></div>';
+
+  document.body.appendChild(mask);
+  const close = () => mask.remove();
+  mask.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+  mask.addEventListener('click', e => { if (e.target === mask) { close(); } });
+
+  const updateCount = () => {
+    const n = mask.querySelectorAll('input[data-perm-id]:checked').length;
+    mask.querySelector('#grantCount').textContent = '已选 ' + n + ' 项';
+  };
+  mask.querySelectorAll('input[data-perm-id]').forEach(cb => cb.addEventListener('change', updateCount));
+  updateCount();
+
+  mask.querySelector('#mSave').addEventListener('click', async () => {
+    const ids = Array.from(mask.querySelectorAll('input[data-perm-id]:checked'))
+      .map(x => Number(x.dataset.permId));
+    const btn = mask.querySelector('#mSave');
+    const err = mask.querySelector('#mErr');
+    btn.disabled = true;
+    btn.textContent = '保存中…';
+
+    const res = await api('/api/users/' + user.id + '/permissions', {
+      method: 'POST',
+      body: { permissionIds: ids }
+    });
+
+    btn.disabled = false;
+    btn.textContent = '保存';
+    if (res.code !== 0) {
+      err.hidden = false;
+      err.textContent = res.message || '保存失败';
+      return;
+    }
+
+    close();
+    toast('授权成功，该用户已被强制下线', 'ok');
+    openMenu('/users');
+  });
+}
+
+/* ---------------- 用户管理 ---------------- */
+async function renderUsers(menu) {
+  const res = await api('/api/users?page=1&size=100');
+  if (res.code !== 0) { el('view').innerHTML = deniedCard(res); return; }
+
+  const list = res.data.list || [];
+  const canAdd = can('USER:ADD');
+  const canEdit = can('USER:EDIT');
+  const canDel = can('USER:DELETE');
+
+  const rows = list.map(u => {
+    const actions = [];
+    if (canEdit) { actions.push('<button class="btn sm" data-grant-user="' + u.id + '">授权</button>'); }
+    if (canEdit) { actions.push('<button class="btn sm" data-edit-user="' + u.id + '">编辑</button>'); }
+    if (canDel) { actions.push('<button class="btn sm danger" data-del-user="' + u.id + '">删除</button>'); }
+    return '<tr>' +
+      '<td class="perm-cell">' + escapeHtml(u.account) + '</td>' +
+      '<td><b>' + escapeHtml(u.name) + '</b></td>' +
+      '<td>' + escapeHtml(u.department || '—') + '</td>' +
+      '<td>' + escapeHtml(u.roleNames || '—') + '</td>' +
+      '<td>' + u.permCount + '</td>' +
+      '<td>' + (u.status === 1 ? '<span class="tag grant">启用</span>' : '<span class="tag deny">停用</span>') + '</td>' +
+      '<td class="muted">' + escapeHtml(u.phone || '—') + '</td>' +
+      '<td><div class="row-actions">' + (actions.join('') || '<span class="muted">—</span>') + '</div></td>' +
+    '</tr>';
+  }).join('');
+
+  el('view').innerHTML =
+    pageHeadAction('用户管理', '真实数据：GET /api/users；新增、编辑、删除受权限码控制。',
+      canAdd ? '<button class="btn pri" id="addUserBtn">新增用户</button>' : '<span class="muted">只读</span>') +
+    '<div class="panel"><div class="panel-h"><h2>用户列表</h2><span class="hint">共 ' + res.data.total + ' 人</span></div>' +
+    '<div class="panel-b flush"><table class="tbl"><thead><tr><th>工号</th><th>姓名</th><th>所属部门</th><th>角色</th><th>权限数</th><th>状态</th><th>手机号</th><th>操作</th></tr></thead>' +
+    '<tbody>' + (rows || '<tr><td colspan="8"><div class="empty">暂无数据</div></td></tr>') + '</tbody></table></div></div>';
+
+  if (canAdd) {
+    el('addUserBtn').addEventListener('click', () => {
+      openFormModal('新增用户', [
+        { name: 'account', label: '工号', required: true, placeholder: 'SG000103' },
+        { name: 'name', label: '姓名', required: true },
+        { name: 'phone', label: '手机号', placeholder: '13800000103' }
+      ], '创建用户', async v => {
+        const r = await api('/api/users', { method: 'POST', body: v });
+        if (r.code === 0) { toast('用户已创建，初始密码 123456', 'ok'); openMenu('/users'); }
+        return r;
+      });
+    });
+  }
+
+  document.querySelectorAll('[data-grant-user]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.grantUser);
+      const u = list.find(x => x.id === id);
+      openGrantModal(u);
+    });
+  });
+
+  document.querySelectorAll('[data-edit-user]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.editUser);
+      const u = list.find(x => x.id === id);
+      openFormModal('编辑用户', [
+        { name: 'account', label: '工号', value: u.account, readonly: true },
+        { name: 'name', label: '姓名', required: true, value: u.name },
+        { name: 'phone', label: '手机号', value: u.phone || '' }
+      ], '保存修改', async v => {
+        const r = await api('/api/users/' + id, { method: 'PUT', body: { name: v.name, phone: v.phone } });
+        if (r.code === 0) { toast('用户信息已更新', 'ok'); openMenu('/users'); }
+        return r;
+      });
+    });
+  });
+
+  document.querySelectorAll('[data-del-user]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = Number(btn.dataset.delUser);
+      const u = list.find(x => x.id === id);
+      if (!window.confirm('确定删除用户「' + u.name + '」？会同时移除角色关联与会话。')) { return; }
+      const r = await api('/api/users/' + id, { method: 'DELETE' });
+      if (r.code === 0) { toast('用户已删除', 'ok'); openMenu('/users'); }
+      else { toast(r.message || '删除失败', 'err'); }
+    });
+  });
+}
+
+/* ---------------- 我的申请 ---------------- */
+async function renderApplies(menu) {
+  const res = await api('/api/applies/mine');
+  if (res.code !== 0) { el('view').innerHTML = deniedCard(res); return; }
+
+  const list = res.data || [];
+  const rows = list.map(a =>
+    '<tr>' +
+      '<td class="perm-cell">' + a.id + '</td>' +
+      '<td>' + typeLabel(a.targetType) + '</td>' +
+      '<td>' + escapeHtml(a.targetName || ('#' + a.targetId)) + '<div class="perm-cell">#' + a.targetId + '</div></td>' +
+      '<td>' + escapeHtml(a.reason) + '</td>' +
+      '<td>' + statusTag(a.status) + '</td>' +
+      '<td class="muted">' + escapeHtml(a.approverName || '—') + '<div class="perm-cell">' + escapeHtml(a.approveTime || '') + '</div></td>' +
+    '</tr>').join('');
+
+  el('view').innerHTML =
+    pageHead('我的申请', '提交角色或权限申请；审批通过后自动授权，重新登录即可生效。') +
+    '<div class="panel" style="margin-bottom:14px">' +
+      '<div class="panel-h"><h2>提交申请</h2><span class="hint">走审批链</span></div>' +
+      '<div class="panel-b"><div class="apply-grid">' +
+        '<label>申请类型</label>' +
+        '<select id="apType" class="inp"><option value="PERM">权限（功能点 × 操作）</option><option value="ROLE">角色</option></select>' +
+        '<label>目标 ID</label>' +
+        '<div><input id="apTarget" class="inp" type="number" placeholder="例如 16">' +
+        '<div class="help">角色 ID：1 系统管理员 / 2 部门主管 / 3 普通员工；权限 ID 见「权限目录」。</div></div>' +
+        '<label>申请理由</label>' +
+        '<div><textarea id="apReason" class="inp" style="min-height:64px" placeholder="说明为什么需要，至少 4 个字"></textarea></div>' +
+      '</div>' +
+      '<div id="apErr" class="form-error" hidden></div>' +
+      '<div class="actions" style="justify-content:flex-end;margin-top:10px"><button id="apSubmit" class="btn pri">提交申请</button></div>' +
+      '</div></div>' +
+    '<div class="panel"><div class="panel-h"><h2>申请记录</h2><span class="hint">共 ' + list.length + ' 条</span></div>' +
+      '<div class="panel-b flush"><table class="tbl"><thead><tr><th>单号</th><th>类型</th><th>目标</th><th>理由</th><th>状态</th><th>审批人 / 时间</th></tr></thead>' +
+      '<tbody>' + (rows || '<tr><td colspan="6"><div class="empty">还没有提交过申请</div></td></tr>') + '</tbody></table></div></div>';
+
+  el('apSubmit').addEventListener('click', submitApply);
+  el('apReason').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { submitApply(); }
+  });
+}
+
+function showApplyError(message) {
+  const box = el('apErr');
+  if (!message) { box.hidden = true; box.textContent = ''; return; }
+  box.hidden = false;
+  box.textContent = message;
+}
+
+async function submitApply() {
+  showApplyError('');
+  const type = el('apType').value;
+  const targetId = Number(el('apTarget').value);
+  const reason = el('apReason').value.trim();
+
+  if (!targetId) { showApplyError('请填写目标 ID'); return; }
+  if (reason.length < 4) { showApplyError('申请理由至少 4 个字'); return; }
+
+  const btn = el('apSubmit');
+  btn.disabled = true;
+  btn.textContent = '提交中…';
+
+  const res = await api('/api/applies', {
+    method: 'POST',
+    body: { targetType: type, targetId, reason }
+  });
+
+  btn.disabled = false;
+  btn.textContent = '提交申请';
+
+  if (res.code !== 0) {
+    showApplyError(res.message || '提交失败');
+    return;
+  }
+
+  toast('申请已提交，等待管理员审批', 'ok');
+  openMenu('/applies');
+}
+
+/* ---------------- 待我审批 ---------------- */
+async function renderApprovals(menu) {
+  const res = await api('/api/applies?status=0');
+  if (res.code !== 0) { el('view').innerHTML = deniedCard(res); return; }
+
+  const list = res.data || [];
+  const rows = list.map(a =>
+    '<tr>' +
+      '<td class="perm-cell">' + a.id + '</td>' +
+      '<td><b>' + escapeHtml(a.applicantName) + '</b></td>' +
+      '<td>' + typeLabel(a.targetType) + '</td>' +
+      '<td>' + escapeHtml(a.targetName || ('#' + a.targetId)) + '<div class="perm-cell">#' + a.targetId + '</div></td>' +
+      '<td>' + escapeHtml(a.reason) + '</td>' +
+      '<td class="perm-cell">' + escapeHtml(a.createdAt || '') + '</td>' +
+      '<td><div class="row-actions">' +
+        '<button class="btn sm" data-approve="' + a.id + '">通过</button>' +
+        '<button class="btn sm danger" data-reject="' + a.id + '">驳回</button>' +
+      '</div></td>' +
+    '</tr>').join('');
+
+  el('view').innerHTML =
+    pageHead('待我审批', '处理待办；通过后自动授权并撤销申请人会话。') +
+    '<div class="panel"><div class="panel-h"><h2>待办列表</h2><span class="hint">' + list.length + ' 条</span></div>' +
+      '<div class="panel-b flush"><table class="tbl"><thead><tr><th>单号</th><th>申请人</th><th>类型</th><th>目标</th><th>理由</th><th>提交时间</th><th>操作</th></tr></thead>' +
+      '<tbody>' + (rows || '<tr><td colspan="7"><div class="empty">暂无待办，全部处理完了</div></td></tr>') + '</tbody></table></div></div>';
+
+  document.querySelectorAll('[data-approve]').forEach(btn => {
+    btn.addEventListener('click', () => decideApply(Number(btn.dataset.approve), 'APPROVE', '同意'));
+  });
+  document.querySelectorAll('[data-reject]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const comment = window.prompt('请输入驳回原因（必填）');
+      if (comment === null) { return; }
+      if (!comment.trim()) { toast('驳回必须填写原因', 'err'); return; }
+      decideApply(Number(btn.dataset.reject), 'REJECT', comment.trim());
+    });
+  });
+}
+
+async function decideApply(id, action, comment) {
+  const res = await api(`/api/applies/${id}/decide`, {
+    method: 'PUT',
+    body: { action, comment }
+  });
+
+  if (res.code !== 0) {
+    toast(res.message || '操作失败', 'err');
+    return;
+  }
+
+  toast(action === 'APPROVE' ? '审批通过，授权已生效' : '申请已驳回', 'ok');
+  openMenu('/approvals');
+}
+
+/* ---------------- 角色管理 ---------------- */
+async function openRoleModal(role) {
+  const editing = !!role;
+  const [allRes, rolePermRes] = await Promise.all([
+    api('/api/permissions'),
+    editing ? api('/api/roles/' + role.id + '/permissions') : Promise.resolve({ code: 0, data: { permissions: [] } })
+  ]);
+  if (allRes.code !== 0) { toast(allRes.message || '加载权限清单失败', 'err'); return; }
+  if (editing && rolePermRes.code !== 0) { toast(rolePermRes.message || '加载角色权限失败', 'err'); return; }
+
+  const all = allRes.data || [];
+  const checked = new Set(
+    ((rolePermRes.data && rolePermRes.data.permissions) || [])
+      .filter(p => p.checked)
+      .map(p => String(p.id))
+  );
+  const groups = {};
+  all.forEach(p => {
+    const key = p.sysName || '其他';
+    (groups[key] = groups[key] || []).push(p);
+  });
+  const groupsHtml = Object.keys(groups).map(sys =>
+    '<div class="perm-group"><div class="perm-group-h">' + escapeHtml(sys) + '</div>' +
+    groups[sys].map(p =>
+      '<label class="perm-check"><input type="checkbox" data-rperm-id="' + p.id + '"' +
+      (checked.has(String(p.id)) ? ' checked' : '') + '>' +
+      '<span>' + escapeHtml(p.funcName) + ' · ' + escapeHtml(p.action) + '</span>' +
+      '<code>' + escapeHtml(p.permCode) + '</code></label>'
+    ).join('') + '</div>'
+  ).join('');
+
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask';
+  mask.innerHTML = '<div class="modal" style="width:min(680px,100%)">' +
+    '<div class="modal-head"><h3>' + (editing ? '编辑角色 · ' + escapeHtml(role.name) : '新增角色') + '</h3>' +
+    '<button class="modal-close" data-close>×</button></div>' +
+    '<div class="modal-body"><div class="form-error" id="rErr" hidden></div>' +
+      '<div class="mfield"><label>角色编码 *</label><input class="inp" id="rfCode" value="' +
+        escapeHtml(editing ? role.code : '') + '" placeholder="FIN_SPECIALIST"' + (editing ? ' readonly' : '') + '></div>' +
+      '<div class="mfield"><label>角色名称 *</label><input class="inp" id="rfName" value="' +
+        escapeHtml(editing ? role.name : '') + '" placeholder="财务专员"></div>' +
+      '<div class="mfield"><label>备注</label><textarea class="inp" id="rfRemark" style="min-height:52px">' +
+        escapeHtml(editing ? (role.remark || '') : '') + '</textarea></div>' +
+      '<div class="mfield"><label>角色权限</label><div class="perm-groups">' + groupsHtml + '</div></div>' +
+    '</div>' +
+    '<div class="modal-foot"><span class="muted" id="roleCount" style="margin-right:auto"></span>' +
+    '<button class="btn" data-close>取消</button><button class="btn pri" id="rSave">保存</button></div></div>';
+
+  document.body.appendChild(mask);
+  const close = () => mask.remove();
+  mask.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+  mask.addEventListener('click', e => { if (e.target === mask) { close(); } });
+
+  const count = () => {
+    const n = mask.querySelectorAll('input[data-rperm-id]:checked').length;
+    mask.querySelector('#roleCount').textContent = '已选 ' + n + ' 项权限';
+  };
+  mask.querySelectorAll('input[data-rperm-id]').forEach(cb => cb.addEventListener('change', count));
+  count();
+
+  mask.querySelector('#rSave').addEventListener('click', async () => {
+    const err = mask.querySelector('#rErr');
+    const btn = mask.querySelector('#rSave');
+    const showErr = msg => { err.hidden = !msg; err.textContent = msg || ''; };
+    showErr('');
+
+    const code = mask.querySelector('#rfCode').value.trim();
+    const name = mask.querySelector('#rfName').value.trim();
+    const remark = mask.querySelector('#rfRemark').value.trim();
+    const ids = Array.from(mask.querySelectorAll('input[data-rperm-id]:checked')).map(x => Number(x.dataset.rpermId));
+    if (!code) { showErr('角色编码不能为空'); return; }
+    if (!name) { showErr('角色名称不能为空'); return; }
+
+    btn.disabled = true;
+    btn.textContent = '保存中…';
+    let res;
+    if (editing) {
+      res = await api('/api/roles/' + role.id, { method: 'PUT', body: { name, remark, status: role.status } });
+      if (res.code === 0) {
+        res = await api('/api/roles/' + role.id + '/permissions', { method: 'PUT', body: { permissionIds: ids } });
+      }
+    } else {
+      res = await api('/api/roles', { method: 'POST', body: { code, name, remark, permissionIds: ids } });
+    }
+    btn.disabled = false;
+    btn.textContent = '保存';
+
+    if (res.code !== 0) { showErr(res.message || '保存失败'); return; }
+    close();
+    toast(editing ? '角色已更新，持有该角色的用户已被强制下线' : '角色已创建', 'ok');
+    openMenu('/roles');
+  });
+}
+
+async function renderRoles(menu) {
+  const res = await api('/api/roles');
+  if (res.code !== 0) { el('view').innerHTML = deniedCard(res); return; }
+
+  const list = res.data || [];
+  const canAdd = can('ROLE:ADD');
+  const canEdit = can('ROLE:EDIT');
+  const canDel = can('ROLE:DELETE');
+
+  const rows = list.map(r =>
+    '<tr>' +
+      '<td class="perm-cell">' + escapeHtml(r.code) + '</td>' +
+      '<td><b>' + escapeHtml(r.name) + '</b><div class="muted">' + escapeHtml(r.remark || '') + '</div></td>' +
+      '<td>' + r.memberCount + '</td>' +
+      '<td>' + r.permCount + '</td>' +
+      '<td>' + (r.status === 1 ? '<span class="tag grant">启用</span>' : '<span class="tag deny">停用</span>') + '</td>' +
+      '<td><div class="row-actions">' +
+        (canEdit ? '<button class="btn sm" data-edit-role="' + r.id + '">编辑</button>' : '') +
+        (canDel ? '<button class="btn sm danger" data-del-role="' + r.id + '">删除</button>' : '') +
+        (!canEdit && !canDel ? '<span class="muted">—</span>' : '') +
+      '</div></td>' +
+    '</tr>').join('');
+
+  el('view').innerHTML =
+    pageHeadAction('角色管理', '角色是权限包；新增/编辑时可直接勾选权限，保存后持有者会话失效。',
+      canAdd ? '<button class="btn pri" id="addRoleBtn">新增角色</button>' : '<span class="muted">只读</span>') +
+    '<div class="panel"><div class="panel-h"><h2>角色列表</h2><span class="hint">' + list.length + ' 个</span></div>' +
+    '<div class="panel-b flush"><table class="tbl"><thead><tr><th>编码</th><th>名称</th><th>成员</th><th>权限</th><th>状态</th><th>操作</th></tr></thead>' +
+    '<tbody>' + (rows || '<tr><td colspan="6"><div class="empty">暂无数据</div></td></tr>') + '</tbody></table></div></div>';
+
+  if (canAdd) {
+    el('addRoleBtn').addEventListener('click', () => openRoleModal(null));
+  }
+
+  document.querySelectorAll('[data-edit-role]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.editRole);
+      openRoleModal(list.find(x => x.id === id));
+    });
+  });
+
+  document.querySelectorAll('[data-del-role]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = Number(btn.dataset.delRole);
+      const role = list.find(x => x.id === id);
+      if (!window.confirm('确定删除角色「' + role.name + '」？会先解除其 ' + role.memberCount + ' 名成员，并使其会话失效。')) { return; }
+      const r = await api('/api/roles/' + id, { method: 'DELETE' });
+      if (r.code === 0) {
+        toast('角色已删除，解除 ' + (r.data ? r.data.unboundUsers : 0) + ' 个成员关联', 'ok');
+        openMenu('/roles');
+      } else {
+        toast(r.message || '删除失败', 'err');
+      }
+    });
+  });
+}
+
+/* ---------------- 权限目录 ---------------- */
+async function renderPermissions(menu) {
+  const res = await api('/api/permissions');
+  if (res.code !== 0) { el('view').innerHTML = deniedCard(res); return; }
+
+  const list = res.data || [];
+  const canAdd = can('PERM:ADD');
+  const canDel = can('PERM:DELETE');
+
+  const rows = list.map(p =>
+    '<tr>' +
+      '<td class="perm-cell">' + p.id + '</td>' +
+      '<td>' + escapeHtml(p.sysName) + '</td>' +
+      '<td>' + escapeHtml(p.moduleName) + '</td>' +
+      '<td>' + escapeHtml(p.funcName) + '</td>' +
+      '<td><span class="tag plain">' + escapeHtml(p.action) + '</span></td>' +
+      '<td class="perm-cell">' + escapeHtml(p.permCode) + '</td>' +
+      '<td><div class="row-actions">' +
+        (canDel ? '<button class="btn sm danger" data-del-perm="' + p.id + '">删除</button>' : '<span class="muted">—</span>') +
+      '</div></td>' +
+    '</tr>').join('');
+
+  el('view').innerHTML =
+    pageHeadAction('权限目录', '权限的最小单元 = 功能点 × 操作；ID 可直接用于提交申请。',
+      canAdd ? '<button class="btn pri" id="addPermBtn">新增权限</button>' : '<span class="muted">只读</span>') +
+    '<div class="panel"><div class="panel-h"><h2>全部权限</h2><span class="hint">' + list.length + ' 枚</span></div>' +
+    '<div class="panel-b flush"><table class="tbl"><thead><tr><th>ID</th><th>系统</th><th>模块</th><th>功能点</th><th>动作</th><th>权限码</th><th>操作</th></tr></thead>' +
+    '<tbody>' + (rows || '<tr><td colspan="7"><div class="empty">暂无数据</div></td></tr>') + '</tbody></table></div></div>';
+
+  if (canAdd) {
+    el('addPermBtn').addEventListener('click', () => {
+      openFormModal('新增权限点', [
+        { name: 'sysCode', label: '系统编码', required: true, placeholder: 'OA' },
+        { name: 'sysName', label: '系统名称', required: true, placeholder: 'OA系统' },
+        { name: 'moduleName', label: '模块', required: true, placeholder: '公文管理' },
+        { name: 'funcCode', label: '功能点编码', required: true, placeholder: 'OA:DOC' },
+        { name: 'funcName', label: '功能点名称', required: true, placeholder: '收文登记' },
+        { name: 'action', label: '动作', required: true, placeholder: 'DELETE', help: '如 VIEW / ADD / EDIT / DELETE / EXPORT' },
+        { name: 'permCode', label: '权限码', required: true, placeholder: 'OA:DOC:DELETE', help: '格式：资源:动作' },
+        { name: 'sortNo', label: '排序号', type: 'number', placeholder: '99' }
+      ], '创建权限', async v => {
+        const r = await api('/api/permissions', {
+          method: 'POST',
+          body: {
+            sysCode: v.sysCode,
+            sysName: v.sysName,
+            moduleName: v.moduleName,
+            funcCode: v.funcCode,
+            funcName: v.funcName,
+            action: v.action,
+            permCode: v.permCode,
+            sortNo: v.sortNo ? Number(v.sortNo) : null
+          }
+        });
+        if (r.code === 0) { toast('权限点已创建', 'ok'); openMenu('/permissions'); }
+        return r;
+      });
+    });
+  }
+
+  document.querySelectorAll('[data-del-perm]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = Number(btn.dataset.delPerm);
+      const perm = list.find(x => x.id === id);
+      if (!window.confirm('确定删除权限「' + perm.permCode + '」？角色与用户的该权限会一并解除。')) { return; }
+      const r = await api('/api/permissions/' + id, { method: 'DELETE' });
+      if (r.code === 0) { toast('权限点已删除', 'ok'); openMenu('/permissions'); }
+      else { toast(r.message || '删除失败', 'err'); }
+    });
+  });
+}
+
+/* ---------------- 财务报表 ---------------- */
+async function renderReport(menu) {
+  const res = await api('/api/report/cost');
+  if (res.code !== 0) { el('view').innerHTML = deniedCard(res); return; }
+
+  const rows = (res.data.rows || []).map(r =>
+    '<tr>' +
+      '<td><b>' + escapeHtml(r.name) + '</b></td>' +
+      '<td>' + r.budget + ' 万元</td>' +
+      '<td>' + r.actual + ' 万元</td>' +
+      '<td>' + escapeHtml(r.rate) + '</td>' +
+      '<td>' + (r.status === '超支' ? '<span class="tag deny">超支</span>'
+        : (r.status === '预警' ? '<span class="tag pend">预警</span>' : '<span class="tag grant">正常</span>')) + '</td>' +
+    '</tr>').join('');
+
+  el('view').innerHTML = pageHead('财务报表', '业务页面同样由权限码驱动：能看页面 ≠ 能导出。') +
+    '<div class="kpis" style="margin-bottom:14px">' +
+      '<div class="kpi"><div class="k">项目数</div><div class="v">' + res.data.rows.length + '</div></div>' +
+      '<div class="kpi"><div class="k">导出权限</div><div class="v" style="font-size:15px;margin-top:6px">' +
+        (res.data.canExport ? '<span class="tag grant">可用</span>' : '<span class="tag pend">未授权</span>') + '</div></div>' +
+      '<div class="kpi"><div class="k">当前账号</div><div class="v" style="font-size:15px;margin-top:6px">' + escapeHtml(state.user.name) + '</div></div>' +
+      '<div class="kpi"><div class="k">数据来源</div><div class="v" style="font-size:14px;margin-top:6px">GET /api/report/cost</div></div>' +
+    '</div>' +
+    '<div class="panel"><div class="panel-h"><h2>项目成本月报</h2><span class="hint">演示数据</span></div>' +
+    '<div class="panel-b flush"><table class="tbl"><thead><tr><th>项目</th><th>预算</th><th>已发生</th><th>执行率</th><th>状态</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table></div></div>';
+}
+
+/* ---------------- 启动 ---------------- */
+el('logout').addEventListener('click', () => {
+  clearSession();
+  location.reload();
+});
+
+(async function boot() {
+  const saved = readSession();
+  if (!saved || !saved.sessionId) { renderLogin(); return; }
+
+  state.sessionId = saved.sessionId;
+  state.user = saved.user;
+  state.roles = saved.roles || [];
+  state.menus = saved.menus || [];
+  state.expireAt = saved.expireAt || '';
+
+  const me = await api('/api/auth/me');
+  if (me.code === 0) {
+    applySession({ ...me.data, sessionId: saved.sessionId });
+    saveSession({ ...me.data, sessionId: saved.sessionId });
+    showConsole();
+  } else if (me.code !== 401) {
+    renderLogin(me.message || '登录状态已失效');
+  }
+})();
+</script>
+</body>
+</html>

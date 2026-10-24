@@ -84,8 +84,21 @@ public interface ApplyMapper {
     @Select(BASE + " WHERE a.applicant_id = #{applicantId} ORDER BY a.id DESC")
     List<ApplyRow> listMine(@Param("applicantId") long applicantId);
 
-    @Select(BASE + " WHERE a.status = #{status} ORDER BY a.id")
-    List<ApplyRow> listByStatus(@Param("status") int status);
+    // 仅返回审批人所在部门（其担任 manager 的部门）下属的申请
+    @Select(BASE + """
+             WHERE a.status = #{status}
+               AND u.department_id = (
+                   SELECT d.id FROM sys_department d WHERE d.manager_id = #{managerId} LIMIT 1
+               )
+             ORDER BY a.id
+            """)
+    List<ApplyRow> listByStatus(@Param("status") int status, @Param("managerId") long managerId);
+
+    @Select("SELECT id FROM sys_department WHERE manager_id = #{userId} LIMIT 1")
+    Long managedDepartmentOf(@Param("userId") long userId);
+
+    @Select("SELECT department_id FROM sys_user WHERE id = #{userId}")
+    Long departmentOfUser(@Param("userId") long userId);
 
     @Update("""
             UPDATE sys_permission_apply
@@ -104,4 +117,15 @@ public interface ApplyMapper {
     long countPending(@Param("applicantId") long applicantId,
                       @Param("targetType") String targetType,
                       @Param("targetId") long targetId);
+
+    @Select("""
+            SELECT COUNT(*)
+            FROM sys_user_role ur
+            JOIN sys_role r ON r.id = ur.role_id AND r.status = 1
+            WHERE ur.user_id = #{userId} AND r.code = 'ADMIN'
+            """)
+    long isAdmin(@Param("userId") long userId);
+
+    @Select(BASE + " WHERE a.status = #{status} ORDER BY a.id")
+    List<ApplyRow> listAllByStatus(@Param("status") int status);
 }

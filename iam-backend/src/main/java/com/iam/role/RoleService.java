@@ -39,7 +39,8 @@ public class RoleService {
         return data;
     }
 
-    public Map<String, Object> create(String code, String name, String remark) {
+    @Transactional
+    public Map<String, Object> create(String code, String name, String remark, List<Long> permissionIds) {
         code = code == null ? "" : code.trim().toUpperCase();
         name = name == null ? "" : name.trim();
         if (!CODE.matcher(code).matches()) { throw new BizException(400, "角色编码需大写字母开头，2–32 位"); }
@@ -48,7 +49,20 @@ public class RoleService {
 
         roleMapper.insert(code, name, remark);
         Map<String, Object> created = roleMapper.findByCode(code);
-        return detail(((Number) created.get("id")).longValue());
+        long roleId = ((Number) created.get("id")).longValue();
+
+        if (permissionIds != null) {
+            for (Long pid : permissionIds) {
+                if (pid == null) { continue; }
+                if (permissionMapper.countById(pid) == 0) {
+                    throw new IllegalArgumentException("权限不存在：" + pid);
+                }
+                roleMapper.addPermission(roleId, pid);
+            }
+        }
+        log.info("AUDIT role-create operator={} roleId={} code={} permIds={}",
+                SessionContext.userId(), roleId, code, permissionIds);
+        return detail(roleId);
     }
 
     public Map<String, Object> update(long id, String name, String remark, Integer status) {
@@ -57,14 +71,26 @@ public class RoleService {
         String newName = name == null ? String.valueOf(role.get("name")) : name.trim();
         int st = status == null ? ((Number) role.get("status")).intValue() : (status == 0 ? 0 : 1);
         roleMapper.update(id, newName, remark, st);
-        if (st == 0) { sessionMapper.revokeByRole(id); }
+        // 角色信息或状态变更后，强制持有该角色的用户重新登录
+        sessionMapper.revokeByRole(id);
+        log.info("AUDIT role-update operator={} roleId={} status={}", SessionContext.userId(), id, st);
         return detail(id);
     }
 
-    public void delete(long id) {
+    /** 删除角色：先撤销持有人会话，再解除用户关联，最后删角色（角色权限随外键级联删除） */
+    @Transactional
+    public Map<String, Object> delete(long id) {
         if (roleMapper.findById(id) == null) { throw new BizException(404, "角色不存在"); }
-        if (roleMapper.memberCount(id) > 0) { throw new BizException(409, "仍有成员使用该角色，不能删除"); }
+        long members = roleMapper.memberCount(id);
+        if (members > 0) {
+            sessionMapper.revokeByRole(id);
+            roleMapper.unbindUsers(id);
+        }
         roleMapper.delete(id);
+        log.info("AUDIT role-delete operator={} roleId={} unboundUsers={}", SessionContext.userId(), id, members);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("unboundUsers", members);
+        return data;
     }
 
     public Map<String, Object> permissions(long roleId) {

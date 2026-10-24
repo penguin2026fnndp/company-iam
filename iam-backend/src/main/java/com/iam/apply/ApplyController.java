@@ -36,7 +36,7 @@ public class ApplyController {
     @GetMapping
     @RequirePerm("APPLY:APPROVE")
     public Result pending(@RequestParam(defaultValue = "0") int status) {
-        return Result.ok(applyService.byStatus(status));
+        return Result.ok(applyService.byStatus(status, SessionContext.userId()));
     }
 
     @Operation(summary = "审批", description = "APPROVE 通过并自动授权；REJECT 驳回必须填原因")

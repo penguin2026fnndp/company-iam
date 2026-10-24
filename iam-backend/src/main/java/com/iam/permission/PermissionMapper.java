@@ -2,6 +2,7 @@ package com.iam.permission;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
@@ -86,6 +87,27 @@ public interface PermissionMapper {
 
     @Select("""
             SELECT id, sys_code, sys_name, module_name, func_name, action, perm_code, sort_no
+            FROM sys_permission WHERE perm_code = #{code}
+            """)
+    PermRow findByCode(@Param("code") String code);
+
+    @Insert("""
+            INSERT INTO sys_permission
+                (sys_code, sys_name, module_name, func_code, func_name, action, perm_code, status, sort_no)
+            VALUES
+                (#{sysCode}, #{sysName}, #{moduleName}, #{funcCode}, #{funcName},
+                 #{action}, #{permCode}, 1, #{sortNo})
+            """)
+    int insert(@Param("sysCode") String sysCode, @Param("sysName") String sysName,
+               @Param("moduleName") String moduleName, @Param("funcCode") String funcCode,
+               @Param("funcName") String funcName, @Param("action") String action,
+               @Param("permCode") String permCode, @Param("sortNo") int sortNo);
+
+    @Delete("DELETE FROM sys_permission WHERE id = #{id}")
+    int delete(@Param("id") long id);
+
+    @Select("""
+            SELECT id, sys_code, sys_name, module_name, func_name, action, perm_code, sort_no
             FROM sys_permission WHERE id = #{id} AND status = 1
             """)
     PermRow findById(@Param("id") long id);
@@ -98,4 +120,20 @@ public interface PermissionMapper {
             VALUES (#{userId}, #{permId}, #{applyId})
             """)
     int addDirect(@Param("userId") long userId, @Param("permId") long permId, @Param("applyId") Long applyId);
+
+    @Select("""
+            SELECT p.id, p.sys_code AS sysCode, p.sys_name AS sysName, p.module_name AS moduleName,
+                   p.func_name AS funcName, p.action, p.perm_code AS permCode
+            FROM sys_user_permission up
+            JOIN sys_permission p ON p.id = up.permission_id AND p.status = 1
+            WHERE up.user_id = #{userId}
+            ORDER BY p.sort_no, p.id
+            """)
+    List<Map<String, Object>> directOfUser(@Param("userId") long userId);
+
+    @Delete("DELETE FROM sys_user_permission WHERE user_id = #{userId}")
+    int clearDirect(@Param("userId") long userId);
+
+    @Delete("DELETE FROM sys_user_permission WHERE user_id = #{userId} AND permission_id = #{permId}")
+    int deleteDirect(@Param("userId") long userId, @Param("permId") long permId);
 }

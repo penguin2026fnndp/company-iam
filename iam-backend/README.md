@@ -1,112 +1,84 @@
-# IAM 后端（RBAC0 · 第一次检查）
+# IAM 后端（RBAC + 部门数据隔离）
 
-配套文档：[功能清单](docs/01-功能清单.md) · [数据设计](docs/02-数据设计.md) · [实现逻辑](docs/03-实现逻辑.md)
+配套文档：[功能清单](docs/01-功能清单.md) · [数据设计](docs/02-数据设计.md) · [实现逻辑](docs/03-实现逻辑.md) · [详细设计](docs/04-详细设计.md) · [覆盖测试指南](docs/05-覆盖测试指南.md)
 
-## 范围
+## 当前范围
 
-只实现 RBAC0：用户、角色、权限、用户角色、角色权限、会话。审批、差量、例外、项目域、组织树全部不做。
-
-- 8 张表、26 个接口、23 个功能、18 枚权限码
-- 申请审批闭环：提交申请 → 管理员待办 → 通过后自动写角色/权限 → 会话失效 → 重登生效
-- 鉴权三层：菜单过滤、路由守卫、接口校验（本次只做接口层，菜单由 `/auth/me` 下发）
-- 前端原型用 mock，后端独立跑，两边不联调
+- 9 张业务表、10 个种子用户、5 个模板角色、2 个部门、20 枚权限。
+- 用户有效权限 = 启用角色权限并集 + 用户直接权限。
+- 管理员 `SG900001` 为超级管理员，拥有全部 20 枚权限。
+- 张伟 `SG000101` 为技术部主管，拥有 MGR 角色 8 枚权限 + `APPLY:APPROVE` 直接权限，共 9 枚。
+- 李四 `SG000102` 属技术部，王五 `SG000103` 属财务部，郑楠 `SG000108` 为财务部主管。
+- 审批流程：提交申请 → 本部门主管待办 → 审批 → 自动写角色/权限 → 撤销旧会话 → 重新登录生效。
+- 部门隔离：普通主管只能查看和审批自己管辖部门的申请；ADMIN 可查看、审批全系统。
+- 用户、角色、权限、直接授权、角色权限矩阵、登录锁定和申请表均已接入 MySQL。
 
 ## 技术栈
 
-| 层 | 选型 | 说明 |
-| --- | --- | --- |
-| 运行时 | JDK 21 + Spring Boot 3.4.5 | |
-| 持久层 | MyBatis 3.0.4（Mapper 接口 + 注解 SQL） | 一个功能一条 Controller → Service → Mapper 链 |
-| 数据库 | MySQL 8.0 | utf8mb4，InnoDB，外键 + 唯一索引 |
-| 鉴权 | 自建会话表 + 拦截器 | 不用 Spring Security 的过滤器链，便于讲解 |
-| 密码 | BCrypt（cost 10） | 只引入 `spring-security-crypto`，不启用完整 Security |
-| 构建 | Maven 3.10 + 阿里云镜像 | `mvn clean package` 产出可执行 jar |
+| 层 | 选型 |
+| --- | --- |
+| 运行时 | JDK 21 + Spring Boot 3.4.5 |
+| 持久层 | MyBatis 3.0.4，Mapper 接口 + 注解 SQL |
+| 数据库 | MySQL 8.0，库名 `iam_rbac` |
+| 鉴权 | 数据库会话 + Bearer Token + `AuthInterceptor` |
+| 密码 | BCrypt |
+| API 文档 | Springdoc OpenAPI / Swagger UI |
+| 测试 | JUnit 5 + Mockito + JaCoCo + Postman / Newman |
 
-## 目录
-
-```
-iam-backend/
-├── pom.xml                 Spring Boot 3.4.5 + MyBatis + MySQL
-├── src/main/java/com/iam/   application / common / auth / user / role / permission / report
-├── src/main/resources/      application.yml
-├── docs/                   功能清单、数据设计、实现逻辑
-├── db/                     schema.sql / seed.sql / reset.sql
-└── deploy/                 systemd、Nginx、部署手册
-```
-
-## 跑起来
+## 本地启动
 
 ```powershell
-# 1. 建库（首次）或重置（改了种子/密码算法后必须重置）
-mysql -uroot -p < db/schema.sql
-mysql -uroot -p < db/seed.sql
-# 已有库则直接：mysql -uroot -p < db/reset.sql
+cd C:\Users\27642\Documents\Codex\2026-10-16\yu\outputs\iam-backend
 
-# 2. 构建
+# 首次建库，或表结构变更后
+mysql -uroot -p --execute="SOURCE db/schema.sql"
+mysql -uroot -p --execute="SOURCE db/seed.sql"
+
+# 已有正确表结构时，每轮集成测试前重置演示数据
+mysql -uroot -p --execute="SOURCE db/reset.sql"
+
+# 构建并启动
 $env:JAVA_HOME = 'C:\Users\27642\AppData\Local\Programs\Eclipse Adoptium\jdk-21.0.12.1+1'
-& 'C:\Users\27642\Maven\apache-maven-3.10.0\bin\mvn.cmd' clean package -DskipTests
-
-# 3. 启动
+& 'C:\Users\27642\Maven\apache-maven-3.10.0\bin\mvn.cmd' clean package
 java -jar target\iam-backend.jar
-
-# 4. 验证
-curl.exe -s -X POST http://127.0.0.1:8080/api/auth/login ^
-  -H "Content-Type: application/json" ^
-  -d "{\"account\":\"SG900001\",\"password\":\"123456\"}"
 ```
 
-Linux / 华为云：
+基础地址：`http://127.0.0.1:8080`
 
-```bash
-# 用 Maven 构建（JDK 17+ 均可）
-mvn clean package -DskipTests
+Swagger UI：`http://127.0.0.1:8080/swagger-ui.html`
 
-# 或把 target/iam-backend.jar 上传到 /opt/iam/app.jar 后
-APP_DIR=/opt/iam bash deploy/run.sh
+演示账号初始密码均为 `123456`：
+
+| 工号 | 姓名 | 说明 |
+| --- | --- | --- |
+| SG900001 | 系统管理员 | ADMIN，全系统管理 |
+| SG000101 | 张伟 | 技术部主管，9 枚有效权限 |
+| SG000102 | 李四 | 技术部员工 |
+| SG000103 | 王五 | 财务部员工 |
+| SG000108 | 郑楠 | 财务部主管 |
+
+## 自动化测试
+
+白盒测试：
+
+```powershell
+& 'C:\Users\27642\Maven\apache-maven-3.10.0\bin\mvn.cmd' clean test
 ```
 
-完整步骤、华为云 ECS 部署、Nginx 与 systemd 配置见 **[deploy/README-部署.md](deploy/README-部署.md)**。
+- 当前共 3 个测试类、12 个 JUnit 5 测试。
+- 覆盖登录、密码错误、5 次锁定、权限数量、同部门审批、跨部门 403、管理员全量待办。
+- 覆盖率报告：`target/site/jacoco/index.html`。
 
-## 已验证的行为
+黑盒集成测试：
 
-| 检查 | 结果 |
-| --- | --- |
-| 管理员登录 | 200，18 枚权限、5 个菜单，会话到期 23:59:59 |
-| 李四登录 | 200，2 枚权限、1 个菜单 |
-| 匿名调 `/api/users` | 401 |
-| 李四调 `/api/users` | 403，返回 `requiredPerm=USER:VIEW` |
-| 新建角色 `FIN_SPECIALIST` | 200，编码唯一校验生效 |
-| 给角色配「财务报表 查看/导出」 | 200，角色权限数变为 2 |
-| 把角色分配给李四 | 200，旧会话立即失效（再调 `/auth/me` 返回 401） |
-| 李四重新登录 | 4 枚权限，菜单多出「财务报表」 |
-| 李四访问 `/api/report/cost` | 200，5 行数据，`canExport=true` |
-
-## 本地起库
-
-```bash
-mysql -uroot -p < db/schema.sql
-mysql -uroot -p < db/seed.sql
+```powershell
+newman run IAM-API.postman_collection.json
 ```
 
-重置演示数据：`mysql -uroot -p < db/reset.sql`
+- 当前集合：7 个文件夹、79 个请求。
+- 最近一次本地实测：79 个请求、113 条断言、0 失败。
+- 每轮运行前执行 `db/reset.sql`，并确保运行的是最新 JAR。
 
-> 演示账号：`SG900001 / SG000101 / SG000102`，初始密码均为 `123456`。
+## 云端部署
 
-## 在线文档与测试
-
-- Swagger UI：`http://127.0.0.1:8080/swagger-ui.html`（分组：00 健康检查 / 01 认证 / 02 用户 / 03 角色 / 04 权限 / 05 业务演示）
-- Postman 集合：项目根目录 `IAM-API.postman_collection.json`，65 个请求（7 个文件夹），按顺序跑完即为全链路验收
-- 每个功能的字段与用例见 [详细设计](docs/04-详细设计.md)
-
-## 登录保护
-
-- 连续失败 5 次锁定 15 分钟（`LoginGuard`，内存实现，返回 429），登录成功清零
-- 会话当日 23:59:59 到期；停用用户、改角色、重置密码都会立即撤销会话
-- 一期的权限变更只打 `AUDIT ...` 的 INFO 日志，不落库
-
-## 后续可补
-
-1. 用 Redis 替换 `LoginGuard` 的内存计数（多实例部署时必需）
-2. `sys_audit_log` 审计表与检索页
-3. 登录失败、导出等安全事件的告警
-4. 单元测试与 CI
+打包后上传可执行 JAR 到华为云 ECS，按 [部署说明](deploy/README-部署.md) 配置 JDK、MySQL、systemd 和 Nginx。数据库连接配置位于 `src/main/resources/application.yml`。

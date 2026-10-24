@@ -23,6 +23,7 @@ public class UserController {
     public record UpdateReq(String name, String phone) {}
     public record StatusReq(Integer status) {}
     public record RolesReq(List<Long> roleIds) {}
+    public record DirectPermsReq(List<Long> permissionIds) {}
 
     @Operation(summary = "用户列表", description = "按工号或姓名模糊搜索，分页返回")
     @GetMapping
@@ -90,6 +91,29 @@ public class UserController {
     @RequirePerm("USER:ASSIGN_ROLE")
     public Result assignRoles(@PathVariable long id, @RequestBody RolesReq req) {
         userService.assignRoles(id, req.roleIds());
+        return Result.ok();
+    }
+
+    @Operation(summary = "查看用户直接权限", description = "只返回 sys_user_permission 中的直接授权，不含角色权限")
+    @GetMapping("/{id}/permissions")
+    @RequirePerm("USER:EDIT")
+    public Result directPermissions(@PathVariable long id) {
+        return Result.ok(userService.directPermissions(id));
+    }
+
+    @Operation(summary = "全量覆盖用户直接权限", description = "先清空再写入；成功后强制该用户下线")
+    @PostMapping("/{id}/permissions")
+    @RequirePerm("USER:EDIT")
+    public Result replaceDirectPermissions(@PathVariable long id, @RequestBody DirectPermsReq req) {
+        userService.replaceDirectPermissions(id, req.permissionIds());
+        return Result.ok();
+    }
+
+    @Operation(summary = "剥夺单条直接权限", description = "成功后强制该用户下线")
+    @DeleteMapping("/{id}/permissions/{permId}")
+    @RequirePerm("USER:EDIT")
+    public Result revokeDirectPermission(@PathVariable long id, @PathVariable long permId) {
+        userService.revokeDirectPermission(id, permId);
         return Result.ok();
     }
 }

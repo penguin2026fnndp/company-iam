@@ -4,6 +4,7 @@ import com.iam.common.BizException;
 import com.iam.common.SessionContext;
 import com.iam.common.SessionMapper;
 import com.iam.role.RoleMapper;
+import com.iam.permission.PermissionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,16 +24,19 @@ public class UserService {
     private final SessionMapper sessionMapper;
     private final PasswordEncoder passwordEncoder;
     private final RoleMapper roleMapper;
+    private final PermissionMapper permissionMapper;
 
     @Value("${iam.password.initial:123456}")
     private String initialPassword;
 
     public UserService(UserMapper userMapper, SessionMapper sessionMapper,
-                       PasswordEncoder passwordEncoder, RoleMapper roleMapper) {
+                       PasswordEncoder passwordEncoder, RoleMapper roleMapper,
+                       PermissionMapper permissionMapper) {
         this.userMapper = userMapper;
         this.sessionMapper = sessionMapper;
         this.passwordEncoder = passwordEncoder;
         this.roleMapper = roleMapper;
+        this.permissionMapper = permissionMapper;
     }
 
     public Map<String, Object> page(String keyword, int page, int size) {
@@ -130,6 +134,45 @@ public class UserService {
         return all;
     }
 
+    /** 该用户的直接权限（不含角色带来的权限） */
+    public List<Map<String, Object>> directPermissions(long userId) {
+        if (userMapper.findById(userId) == null) { throw new BizException(404, "用户不存在"); }
+        return permissionMapper.directOfUser(userId);
+    }
+
+    /** 全量覆盖直接权限；保存后强制该用户下线 */
+    @Transactional
+    public void replaceDirectPermissions(long userId, List<Long> permissionIds) {
+        if (userMapper.findById(userId) == null) { throw new BizException(404, "用户不存在"); }
+        List<Long> ids = permissionIds == null ? List.of() : permissionIds;
+        for (Long pid : ids) {
+            if (pid != null && permissionMapper.countById(pid) == 0) {
+                throw new IllegalArgumentException("权限不存在：" + pid);
+            }
+        }
+
+        permissionMapper.clearDirect(userId);
+        for (Long pid : ids) {
+            if (pid != null) { permissionMapper.addDirect(userId, pid, null); }
+        }
+        sessionMapper.revokeByUser(userId);
+        log.info("AUDIT direct-perm-replace operator={} target={} permIds={}",
+                SessionContext.userId(), userId, ids);
+    }
+
+    /** 剥夺一条直接权限；保存后强制该用户下线 */
+    @Transactional
+    public void revokeDirectPermission(long userId, long permId) {
+        if (userMapper.findById(userId) == null) { throw new BizException(404, "用户不存在"); }
+        if (permissionMapper.countDirect(userId, permId) == 0) {
+            throw new BizException(404, "该用户没有这条直接权限");
+        }
+        permissionMapper.deleteDirect(userId, permId);
+        sessionMapper.revokeByUser(userId);
+        log.info("AUDIT direct-perm-revoke operator={} target={} permId={}",
+                SessionContext.userId(), userId, permId);
+    }
+
     private Map<String, Object> view(UserMapper.UserRow u) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", u.getId());
@@ -137,6 +180,8 @@ public class UserService {
         m.put("name", u.getName());
         m.put("phone", u.getPhone());
         m.put("status", u.getStatus());
+        m.put("departmentId", u.getDepartmentId());
+        m.put("department", u.getDepartmentName() == null ? "—" : u.getDepartmentName());
         m.put("roleNames", u.getRoleNames() == null ? "—" : u.getRoleNames());
         m.put("permCount", u.getPermCount() == null ? 0 : u.getPermCount());
         m.put("createdAt", u.getCreatedAt() == null ? null : u.getCreatedAt().toString().replace('T', ' '));
