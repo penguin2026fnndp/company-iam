@@ -87,6 +87,8 @@ public class AuthService {
         u.put("name", user.getName());
         u.put("phone", user.getPhone());
         u.put("status", user.getStatus());
+        u.put("departmentId", user.getDepartmentId());
+        u.put("departmentPath", user.getDepartmentPath());
         data.put("user", u);
         data.put("roles", roles);
         data.put("permissions", new ArrayList<>(perms));
@@ -105,6 +107,7 @@ public class AuthService {
         add(list, perms, "USER:VIEW", "/users", "用户管理");
         add(list, perms, "ROLE:VIEW", "/roles", "角色管理");
         add(list, perms, "PERM:VIEW", "/permissions", "权限目录");
+        add(list, perms, "AUDIT:VIEW", "/audits", "审计日志");
         add(list, perms, "FIN:RPT:VIEW", "/report", "财务报表");
         return list;
     }

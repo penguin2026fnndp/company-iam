@@ -122,7 +122,8 @@ public interface ApplyMapper {
             SELECT COUNT(*)
             FROM sys_user_role ur
             JOIN sys_role r ON r.id = ur.role_id AND r.status = 1
-            WHERE ur.user_id = #{userId} AND r.code = 'ADMIN'
+            WHERE ur.user_id = #{userId}
+              AND r.code IN ('SUPER_ADMIN', 'SYS_ADMIN', 'SEC_ADMIN')
             """)
     long isAdmin(@Param("userId") long userId);
 

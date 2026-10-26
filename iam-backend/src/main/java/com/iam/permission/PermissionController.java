@@ -1,5 +1,6 @@
 package com.iam.permission;
 
+import com.iam.common.AnyPerm;
 import com.iam.common.RequirePerm;
 import com.iam.common.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,7 +29,7 @@ public class PermissionController {
 
     @Operation(summary = "权限列表", description = "按系统筛选、按权限码或功能名搜索")
     @GetMapping
-    @RequirePerm("PERM:VIEW")
+    @AnyPerm({"PERM:VIEW", "ROLE:VIEW"})
     public Result list(@RequestParam(defaultValue = "") String sysCode,
                        @RequestParam(defaultValue = "") String keyword) {
         List<Map<String, Object>> list = new ArrayList<>();
@@ -48,7 +49,7 @@ public class PermissionController {
 
     @Operation(summary = "系统下拉")
     @GetMapping("/systems")
-    @RequirePerm("PERM:VIEW")
+    @AnyPerm({"PERM:VIEW", "ROLE:VIEW"})
     public Result systems() {
         return Result.ok(permissionMapper.systems());
     }

@@ -177,6 +177,7 @@ h1,h2,h3,h4{margin:0;font-weight:600}
 
 /* ---------- KPI 条 ---------- */
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);background:var(--surface);border-radius:10px;overflow:hidden}
+.kpis.with-dept{grid-template-columns:repeat(5,minmax(0,1fr))}
 .kpi{padding:12px 14px;border-right:1px solid var(--line)}
 .kpi:last-child{border-right:0}
 .kpi .k{font-size:11.5px;color:var(--ink-3)}
@@ -313,6 +314,7 @@ textarea.inp{min-height:64px;resize:vertical;line-height:1.55}
   .rail-foot{display:none}
   .grid-2,.grid-2.wide{grid-template-columns:1fr}
   .kpis{grid-template-columns:repeat(2,1fr)}
+  .kpis.with-dept{grid-template-columns:repeat(2,1fr)}
   .login-wrap{grid-template-columns:1fr}
   .login-side{padding:28px}
 }
@@ -367,6 +369,42 @@ textarea.inp{min-height:64px;resize:vertical;line-height:1.55}
   .perm-group-h{font-size:11.5px;color:var(--ink-3);margin-bottom:4px}
   .perm-check{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12.5px;cursor:pointer}
   .perm-check code{margin-left:auto;font-size:10.5px;color:var(--ink-3);font-family:var(--mono)}
+  .role-current-list{border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin:10px 0}
+  .role-current{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 0}
+  .role-current code{margin-left:7px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+  .role-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+  .role-check{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:4px 0}
+  .role-check code{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+  .audit-detail{max-width:480px;white-space:normal;overflow-wrap:anywhere;font-size:12px;line-height:1.6}
+  .app-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .app-card{
+    position:relative;display:flex;flex-direction:column;min-height:210px;text-align:left;
+    padding:18px;border:1px solid var(--line);border-top:4px solid var(--auth);border-radius:9px;
+    background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;
+    box-shadow:0 5px 16px rgba(25,36,48,.06);transition:transform .16s ease,box-shadow .16s ease
+  }
+  .app-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(25,36,48,.1)}
+  .app-card:focus-visible{outline:3px solid var(--auth-line);outline-offset:2px}
+  .app-card.im{border-top-color:var(--grant)}
+  .app-card.km{border-top-color:var(--except)}
+  .app-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .app-code{
+    display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:30px;
+    padding:0 9px;border-radius:5px;background:var(--auth-bg);color:var(--auth);
+    font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.08em
+  }
+  .app-card.im .app-code{background:var(--grant-bg);color:var(--grant)}
+  .app-card.km .app-code{background:var(--except-bg);color:var(--except)}
+  .app-card h2{margin:22px 0 7px;font-size:18px;line-height:1.35;font-weight:650}
+  .app-card p{margin:0;color:var(--ink-3);font-size:12.5px;line-height:1.7}
+  .app-card-foot{margin-top:auto;padding-top:16px;color:var(--auth);font-size:12px;font-weight:600}
+  .app-perm-list{list-style:none;margin:0;padding:0}
+  .app-perm-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .app-perm-item:last-child{border-bottom:0}
+  .app-perm-item p{margin:0 0 4px;font-size:13px;line-height:1.65}
+  .app-perm-item code{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+  .app-action{min-width:54px;text-align:center}
+  @media(max-width:900px){.app-grid{grid-template-columns:1fr}.app-card{min-height:170px}}
 </style>
 </head>
 <body>
@@ -408,9 +446,10 @@ textarea.inp{min-height:64px;resize:vertical;line-height:1.55}
  * 若要连接云服务器，只需将 API_BASE_URL 修改为
  * http://<服务器公网IP>:8080 即可
  * ============================================================ */
-const API_BASE_URL = 'http://127.0.0.1:8080';
+const API_BASE_URL = 'http://1.92.155.119:8080';
 
 const SESSION_KEY = 'iam_session';
+const APPLICATIONS_MENU = { path: '/applications', label: '应用软件', perm: '' };
 const state = {
   sessionId: '',
   user: null,
@@ -530,18 +569,18 @@ function renderLogin(message) {
     '</div><div style="font-size:12px;color:#8b959d;line-height:1.9">10,000 员工 · 111 部门 · 18 系统 · 359 功能点<br>登录态由后端会话表管理 · 数据来自 MySQL</div></div>' +
     '<div class="login-form"><h2>登录</h2><div class="sub">账号为工号，初始密码 123456</div>' +
     '<div id="lgErr" class="lg-err"' + (message ? '' : ' hidden') + '>' + escapeHtml(message || '') + '</div>' +
-    '<label class="lg-label">工号</label><input id="lgAcc" class="inp" placeholder="SG900001" autocomplete="username">' +
+    '<label class="lg-label">工号</label><input id="lgAcc" class="inp" placeholder="SG000001" autocomplete="username">' +
     '<label class="lg-label">密码</label><input id="lgPwd" class="inp" type="password" placeholder="••••••" autocomplete="current-password">' +
     '<button class="btn pri" id="lgBtn" style="margin-top:8px;justify-content:center;padding:8px">登录</button>' +
     '<div class="login-note">连续失败 5 次锁定 15 分钟；会话当日 23:59 失效。</div>' +
     '<div class="rule"></div><div class="sec-t">演示账号（点击填入）</div><div id="lgList"></div></div></div>';
 
   const accounts = [
-    { account: 'SG900001', label: '系统管理员', desc: '20 枚权限' },
-    { account: 'SG000101', label: '技术部主管', desc: '9 枚权限' },
-    { account: 'SG000102', label: '技术部员工', desc: '2 枚权限' },
-    { account: 'SG000103', label: '财务部员工', desc: '2 枚权限' },
-    { account: 'SG000108', label: '财务部主管', desc: '9 枚权限' }
+    { account: 'SG000011', label: '袁国智 · 超级管理员', desc: '274 枚权限' },
+    { account: 'SG000001', label: '薛峰 · 系统管理员 + 公司领导', desc: '66 枚权限' },
+    { account: 'SG000047', label: '曹瑞 · 安全管理员 + 普通员工', desc: '51 枚权限' },
+    { account: 'SG000197', label: '卢晓超 · 部门主管', desc: '73 枚权限' },
+    { account: 'SG000198', label: '蒋祯 · 普通员工', desc: '44 枚权限' }
   ];
   const box = el('lgList');
   accounts.forEach(a => {
@@ -601,15 +640,17 @@ function showConsole() {
   buildNav();
 
   const hashPath = location.hash.replace(/^#/, '');
-  const target = state.menus.find(m => m.path === hashPath) || state.menus[0];
-  if (target) { openMenu(target.path); }
+  const target = state.menus.find(m => m.path === hashPath)
+    || (hashPath.startsWith('/applications/') ? APPLICATIONS_MENU : null)
+    || state.menus[0]
+    || APPLICATIONS_MENU;
+  if (target) { openMenu(hashPath.startsWith('/applications/') ? hashPath : target.path); }
   else { el('view').innerHTML = '<div class="panel"><div class="panel-b muted">当前账号没有任何可访问菜单。</div></div>'; }
 }
 
 function buildNav() {
   const nav = el('nav');
   nav.innerHTML = '';
-  if (!state.menus.length) { return; }
 
   const group = document.createElement('div');
   group.className = 'nav-g';
@@ -623,20 +664,36 @@ function buildNav() {
     group.appendChild(b);
   });
   nav.appendChild(group);
+
+  const applications = document.createElement('div');
+  applications.className = 'nav-g';
+  applications.innerHTML = '<div class="nav-t">业务应用</div>';
+  const button = document.createElement('button');
+  button.className = 'nav-i';
+  button.dataset.path = APPLICATIONS_MENU.path;
+  button.textContent = APPLICATIONS_MENU.label;
+  button.addEventListener('click', () => openMenu(APPLICATIONS_MENU.path));
+  applications.appendChild(button);
+  nav.appendChild(applications);
 }
 
 async function openMenu(path) {
   state.active = path;
   if (location.hash !== '#' + path) { history.replaceState(null, '', '#' + path); }
+  const navPath = path.startsWith('/applications/') ? APPLICATIONS_MENU.path : path;
   document.querySelectorAll('.nav-i').forEach(b => {
-    if (b.dataset.path === path) { b.setAttribute('aria-current', 'true'); }
+    if (b.dataset.path === navPath) { b.setAttribute('aria-current', 'true'); }
     else { b.removeAttribute('aria-current'); }
   });
 
-  const menu = state.menus.find(m => m.path === path) || { path, label: path, perm: '' };
+  const menu = state.menus.find(m => m.path === path)
+    || (path.startsWith('/applications') ? APPLICATIONS_MENU : { path, label: path, perm: '' });
   el('view').innerHTML = '<div class="loading">加载中…</div>';
 
-  const renderer = views[path];
+  const renderer = views[path]
+    || (path.startsWith('/applications/')
+      ? () => renderApplicationDetail(path.slice('/applications/'.length))
+      : null);
   if (!renderer) {
     el('view').innerHTML = pageHead(menu.label, '该菜单暂未实现页面。') +
       '<div class="panel"><div class="empty">接口已就绪，页面待接入。</div></div>';
@@ -659,7 +716,9 @@ const views = {
   '/approvals': renderApprovals,
   '/roles': renderRoles,
   '/permissions': renderPermissions,
-  '/report': renderReport
+  '/audits': renderAudits,
+  '/report': renderReport,
+  '/applications': renderApplications
 };
 
 function pageHead(title, lead) {
@@ -771,11 +830,12 @@ async function renderPerms(menu) {
 
   el('view').innerHTML =
     pageHead('我的权限', '实时计算：角色权限 ∪ 审批产生的直接权限。') +
-    '<div class="kpis">' +
+    '<div class="kpis with-dept">' +
       '<div class="kpi"><div class="k">权限码</div><div class="v">' + state.permissions.length + '<small>枚</small></div><div class="d">后端计算</div></div>' +
       '<div class="kpi"><div class="k">角色</div><div class="v">' + state.roles.length + '<small>个</small></div><div class="d">' + (state.roles.join(' / ') || '无') + '</div></div>' +
       '<div class="kpi"><div class="k">可见菜单</div><div class="v">' + state.menus.length + '<small>项</small></div><div class="d">按权限过滤</div></div>' +
       '<div class="kpi"><div class="k">账号</div><div class="v" style="font-size:15px;margin-top:6px">' + escapeHtml(d.user.account) + '</div><div class="d">' + escapeHtml(d.user.name) + '</div></div>' +
+      '<div class="kpi"><div class="k">所属部门</div><div class="v" style="font-size:13px;line-height:1.55;margin-top:4px">' + escapeHtml(d.user.departmentPath || '未设置部门') + '</div><div class="d">#' + escapeHtml(d.user.departmentId || '—') + '</div></div>' +
     '</div>' +
     '<div class="grid-2" style="margin-top:14px">' +
       '<div class="panel"><div class="panel-h"><h2>权限码</h2><span class="hint">' + state.permissions.length + ' 枚</span></div>' +
@@ -788,16 +848,19 @@ async function renderPerms(menu) {
 
 /* ---------------- 直接授权弹窗 ---------------- */
 async function openGrantModal(user) {
-  const [allRes, directRes] = await Promise.all([
+  const [allRes, directRes, roleRes] = await Promise.all([
     api('/api/permissions'),
-    api('/api/users/' + user.id + '/permissions')
+    api('/api/users/' + user.id + '/permissions'),
+    api('/api/users/' + user.id + '/roles')
   ]);
 
   if (allRes.code !== 0) { toast(allRes.message || '加载权限清单失败', 'err'); return; }
   if (directRes.code !== 0) { toast(directRes.message || '加载用户直接权限失败', 'err'); return; }
+  if (roleRes.code !== 0) { toast(roleRes.message || '加载用户角色失败', 'err'); return; }
 
   const all = allRes.data || [];
   const checked = new Set((directRes.data || []).map(p => String(p.id)));
+  const assignedRoles = (roleRes.data || []).filter(r => r.checked);
   const groups = {};
   all.forEach(p => {
     const key = p.sysName || '其他';
@@ -813,6 +876,13 @@ async function openGrantModal(user) {
       '<code>' + escapeHtml(p.permCode) + '</code></label>'
     ).join('') + '</div>'
   ).join('');
+  const roleHtml = assignedRoles.map(role =>
+    '<div class="role-current"><span><b>' + escapeHtml(role.name) + '</b>' +
+    '<code>' + escapeHtml(role.code) + '</code></span>' +
+    (can('ROLE:ASSIGN')
+      ? '<button class="btn sm danger" data-remove-role="' + role.id + '">移除角色</button>'
+      : '') + '</div>'
+  ).join('');
 
   const mask = document.createElement('div');
   mask.className = 'modal-mask';
@@ -822,6 +892,8 @@ async function openGrantModal(user) {
     '<div class="modal-body">' +
       '<div class="form-error" id="mErr" hidden></div>' +
       '<div class="muted" style="font-size:12px;line-height:1.7">这里只管理"直接授权"（例外授予）；角色带来的权限不在此处显示。保存后该用户会被强制下线。</div>' +
+      (can('ROLE:ASSIGN') ? '<div class="role-current-list"><div class="perm-group-h">当前角色 · 可快捷剥夺</div>' +
+        (roleHtml || '<div class="muted">暂无角色</div>') + '</div>' : '') +
       '<div class="perm-groups">' + groupsHtml + '</div>' +
     '</div>' +
     '<div class="modal-foot"><span class="muted" id="grantCount" style="margin-right:auto"></span>' +
@@ -838,6 +910,22 @@ async function openGrantModal(user) {
   };
   mask.querySelectorAll('input[data-perm-id]').forEach(cb => cb.addEventListener('change', updateCount));
   updateCount();
+
+  mask.querySelectorAll('[data-remove-role]').forEach(button => {
+    button.addEventListener('click', async () => {
+      const roleId = Number(button.dataset.removeRole);
+      button.disabled = true;
+      const result = await api('/api/users/' + user.id + '/roles/' + roleId, { method: 'DELETE' });
+      button.disabled = false;
+      if (result.code !== 0) {
+        toast(result.message || '剥夺角色失败', 'err');
+        return;
+      }
+      close();
+      toast('角色已剥夺，该用户会话已失效', 'ok');
+      openMenu('/users');
+    });
+  });
 
   mask.querySelector('#mSave').addEventListener('click', async () => {
     const ids = Array.from(mask.querySelectorAll('input[data-perm-id]:checked'))
@@ -867,6 +955,125 @@ async function openGrantModal(user) {
 }
 
 /* ---------------- 用户管理 ---------------- */
+async function openUserEditModal(user) {
+  const [res, rolesRes] = await Promise.all([
+    api('/api/departments'),
+    api('/api/users/' + user.id + '/roles')
+  ]);
+  if (res.code !== 0) { toast(res.message || '加载部门列表失败', 'err'); return; }
+  if (rolesRes.code !== 0) { toast(rolesRes.message || '加载用户角色失败', 'err'); return; }
+
+  const departments = res.data || [];
+  const roles = rolesRes.data || [];
+  const canAssignRole = can('ROLE:ASSIGN');
+  const roleChecks = roles.map(role =>
+    '<label class="role-check"><input type="checkbox" data-ue-role-id="' + role.id + '"' +
+    (role.checked ? ' checked' : '') + (canAssignRole ? '' : ' disabled') + '>' +
+    '<span>' + escapeHtml(role.name) + '</span><code>' + escapeHtml(role.code) + '</code></label>'
+  ).join('');
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask';
+  mask.innerHTML = '<div class="modal" style="width:min(680px,100%)">' +
+    '<div class="modal-head"><h3>编辑用户 · ' + escapeHtml(user.name) + '</h3>' +
+    '<button class="modal-close" data-close>×</button></div>' +
+    '<div class="modal-body"><div class="form-error" id="ueErr" hidden></div>' +
+      '<div class="mfield"><label>工号</label><input class="inp" value="' +
+        escapeHtml(user.account) + '" readonly></div>' +
+      '<div class="mfield"><label>姓名 *</label><input class="inp" id="ueName" value="' +
+        escapeHtml(user.name) + '"></div>' +
+      '<div class="mfield"><label>手机号</label><input class="inp" id="uePhone" value="' +
+        escapeHtml(user.phone || '') + '"></div>' +
+      '<div class="mfield"><label>搜索部门</label><input class="inp" id="ueDeptSearch" ' +
+        'placeholder="输入总公司、分公司或部门名称过滤"></div>' +
+      '<div class="mfield"><label>所属部门 *</label><select class="inp" id="ueDept"></select>' +
+        '<div class="help">按“总公司 / 分公司 / 部门”完整路径展示；同名部门请核对上级。</div></div>' +
+      '<div class="mfield"><label>角色分配</label><div class="role-checks">' + roleChecks + '</div>' +
+        '<div class="help">' + (canAssignRole
+          ? '保存用户资料时会按勾选项全量覆盖角色。'
+          : '当前账号没有 ROLE:ASSIGN，角色仅可查看。') + '</div></div>' +
+    '</div>' +
+    '<div class="modal-foot"><button class="btn" data-close>取消</button>' +
+    '<button class="btn pri" id="ueSave">保存修改</button></div></div>';
+
+  document.body.appendChild(mask);
+  const close = () => mask.remove();
+  mask.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', close));
+  mask.addEventListener('click', event => { if (event.target === mask) { close(); } });
+
+  const errorBox = mask.querySelector('#ueErr');
+  const showError = message => {
+    errorBox.hidden = !message;
+    errorBox.textContent = message || '';
+  };
+  const select = mask.querySelector('#ueDept');
+  const search = mask.querySelector('#ueDeptSearch');
+
+  const fillOptions = query => {
+    const keyword = String(query || '').trim().toLowerCase();
+    const selected = String(select.value || user.departmentId || '');
+    const matches = departments.filter(d => {
+      const haystack = `${d.name || ''} ${d.path || ''} ${d.managerName || ''}`.toLowerCase();
+      return !keyword || haystack.indexOf(keyword) >= 0;
+    });
+
+    select.innerHTML = matches.map(d => {
+      const depth = Math.max(0, Number(d.depth) || 0);
+      const prefix = '　'.repeat(depth);
+      const path = d.path || d.name;
+      return '<option value="' + d.id + '">' + escapeHtml(prefix + d.name + ' · ' + path) + '</option>';
+    }).join('');
+
+    if (!matches.length) {
+      select.innerHTML = '<option value="">没有匹配的部门</option>';
+      return;
+    }
+    if (matches.some(d => String(d.id) === selected)) {
+      select.value = selected;
+    } else {
+      select.value = String(matches[0].id);
+    }
+  };
+
+  fillOptions('');
+  search.addEventListener('input', () => fillOptions(search.value));
+
+  mask.querySelector('#ueSave').addEventListener('click', async () => {
+    const button = mask.querySelector('#ueSave');
+    const name = mask.querySelector('#ueName').value.trim();
+    const phone = mask.querySelector('#uePhone').value.trim();
+    const departmentId = Number(select.value);
+    showError('');
+    if (!name) { showError('姓名不能为空'); return; }
+    if (!departmentId) { showError('请选择所属部门'); return; }
+
+    button.disabled = true;
+    button.textContent = '保存中…';
+    let result = await api('/api/users/' + user.id, {
+      method: 'PUT',
+      body: { name, phone, departmentId }
+    });
+    if (result.code === 0 && canAssignRole) {
+      const roleIds = Array.from(mask.querySelectorAll('input[data-ue-role-id]:checked'))
+        .map(item => Number(item.dataset.ueRoleId));
+      result = await api('/api/users/' + user.id + '/roles', {
+        method: 'POST',
+        body: { roleIds }
+      });
+    }
+    button.disabled = false;
+    button.textContent = '保存修改';
+
+    if (result.code !== 0) {
+      showError(result.message || '保存失败');
+      return;
+    }
+    close();
+    toast(canAssignRole ? '用户资料与角色已更新，该用户已被强制下线' : '用户信息与所属部门已更新', 'ok');
+    openMenu('/users');
+  });
+  mask.querySelector('#ueName').focus();
+}
+
 async function renderUsers(menu) {
   const res = await api('/api/users?page=1&size=100');
   if (res.code !== 0) { el('view').innerHTML = deniedCard(res); return; }
@@ -926,15 +1133,7 @@ async function renderUsers(menu) {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.editUser);
       const u = list.find(x => x.id === id);
-      openFormModal('编辑用户', [
-        { name: 'account', label: '工号', value: u.account, readonly: true },
-        { name: 'name', label: '姓名', required: true, value: u.name },
-        { name: 'phone', label: '手机号', value: u.phone || '' }
-      ], '保存修改', async v => {
-        const r = await api('/api/users/' + id, { method: 'PUT', body: { name: v.name, phone: v.phone } });
-        if (r.code === 0) { toast('用户信息已更新', 'ok'); openMenu('/users'); }
-        return r;
-      });
+      openUserEditModal(u);
     });
   });
 
@@ -974,8 +1173,8 @@ async function renderApplies(menu) {
         '<label>申请类型</label>' +
         '<select id="apType" class="inp"><option value="PERM">权限（功能点 × 操作）</option><option value="ROLE">角色</option></select>' +
         '<label>目标 ID</label>' +
-        '<div><input id="apTarget" class="inp" type="number" placeholder="例如 16">' +
-        '<div class="help">角色 ID：1 系统管理员 / 2 部门主管 / 3 普通员工；权限 ID 见「权限目录」。</div></div>' +
+        '<div><input id="apTarget" class="inp" type="number" placeholder="请输入权限编号">' +
+        '<div class="help" id="apTargetHelp">权限编号可先在「权限目录」中查询。</div></div>' +
         '<label>申请理由</label>' +
         '<div><textarea id="apReason" class="inp" style="min-height:64px" placeholder="说明为什么需要，至少 4 个字"></textarea></div>' +
       '</div>' +
@@ -987,6 +1186,15 @@ async function renderApplies(menu) {
       '<tbody>' + (rows || '<tr><td colspan="6"><div class="empty">还没有提交过申请</div></td></tr>') + '</tbody></table></div></div>';
 
   el('apSubmit').addEventListener('click', submitApply);
+  const syncTargetHint = () => {
+    const role = el('apType').value === 'ROLE';
+    el('apTarget').placeholder = role ? '请输入角色编号' : '请输入权限编号';
+    el('apTargetHelp').textContent = role
+      ? '请输入纯数字角色编号，提交时由系统校验该角色是否存在。'
+      : '权限编号可先在「权限目录」中查询。';
+  };
+  el('apType').addEventListener('change', syncTargetHint);
+  syncTargetHint();
   el('apReason').addEventListener('keydown', e => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { submitApply(); }
   });
@@ -1005,7 +1213,10 @@ async function submitApply() {
   const targetId = Number(el('apTarget').value);
   const reason = el('apReason').value.trim();
 
-  if (!targetId) { showApplyError('请填写目标 ID'); return; }
+  if (!targetId) {
+    showApplyError(type === 'ROLE' ? '请输入角色编号' : '请输入权限编号');
+    return;
+  }
   if (reason.length < 4) { showApplyError('申请理由至少 4 个字'); return; }
 
   const btn = el('apSubmit');
@@ -1081,6 +1292,38 @@ async function decideApply(id, action, comment) {
 
   toast(action === 'APPROVE' ? '审批通过，授权已生效' : '申请已驳回', 'ok');
   openMenu('/approvals');
+}
+
+/* ---------------- 审计日志 ---------------- */
+async function renderAudits() {
+  const res = await api('/api/audits?page=1&size=100');
+  if (res.code !== 0) { el('view').innerHTML = deniedCard(res); return; }
+
+  const actionNames = {
+    ROLE_ASSIGN: '分配角色',
+    ROLE_REMOVE: '剥夺角色',
+    APPLY_DECIDE: '审批申请'
+  };
+  const rows = (res.data.list || []).map(log =>
+    '<tr>' +
+      '<td class="perm-cell">' + log.id + '</td>' +
+      '<td><b>' + escapeHtml(log.operatorName || ('#' + log.operatorId)) + '</b></td>' +
+      '<td><span class="tag plain">' + escapeHtml(actionNames[log.action] || log.action) + '</span>' +
+        '<div class="perm-cell">' + escapeHtml(log.action) + '</div></td>' +
+      '<td>' + escapeHtml(log.targetUserName || ('#' + (log.targetUserId || '—'))) + '</td>' +
+      '<td class="audit-detail">' + escapeHtml(log.detail) + '</td>' +
+      '<td class="perm-cell">' + escapeHtml(log.createdAt || '') + '</td>' +
+    '</tr>'
+  ).join('');
+
+  el('view').innerHTML =
+    pageHead('审计日志', '记录角色分配、角色剥夺与权限申请审批结果。') +
+    '<div class="panel"><div class="panel-h"><h2>操作记录</h2><span class="hint">共 ' +
+      res.data.total + ' 条</span></div>' +
+    '<div class="panel-b flush"><table class="tbl"><thead><tr><th>编号</th><th>操作人</th>' +
+      '<th>动作</th><th>目标用户</th><th>详情</th><th>时间</th></tr></thead><tbody>' +
+      (rows || '<tr><td colspan="6"><div class="empty">暂无审计记录</div></td></tr>') +
+    '</tbody></table></div></div>';
 }
 
 /* ---------------- 角色管理 ---------------- */
@@ -1304,6 +1547,66 @@ async function renderPermissions(menu) {
       else { toast(r.message || '删除失败', 'err'); }
     });
   });
+}
+
+/* ---------------- 应用软件 ---------------- */
+const APPLICATION_META = {
+  OA: { className: 'oa', note: '公文流转、流程审批、会议与督办' },
+  IM: { className: 'im', note: '组织通讯录、即时沟通与移动办公' },
+  KM: { className: 'km', note: '知识文档、全文检索与专业资料沉淀' }
+};
+
+async function renderApplications() {
+  const res = await api('/api/applications');
+  if (res.code !== 0) { el('view').innerHTML = deniedCard(res); return; }
+
+  const list = res.data || [];
+  const cards = list.map(app => {
+    const meta = APPLICATION_META[app.sysCode] || { className: '', note: '业务系统权限' };
+    return '<button type="button" class="app-card ' + escapeHtml(meta.className) +
+      '" data-app-code="' + escapeHtml(app.sysCode) + '">' +
+      '<div class="app-card-top"><span class="app-code">' + escapeHtml(app.sysCode) +
+        '</span><span class="hint">个人权限</span></div>' +
+      '<h2>' + escapeHtml(app.sysName) + '</h2>' +
+      '<p>' + escapeHtml(meta.note) + '</p>' +
+      '<div class="app-card-foot">查看我在该系统中的权限</div></button>';
+  }).join('');
+
+  el('view').innerHTML =
+    pageHead('应用软件', '从业务系统出发查看当前账号拥有的具体功能与操作权限。') +
+    '<div class="panel"><div class="panel-h"><h2>业务系统</h2><span class="hint">一期 3 个系统</span></div>' +
+    '<div class="panel-b"><div class="app-grid">' +
+    (cards || '<div class="empty">暂无已接入的应用软件</div>') +
+    '</div></div></div>';
+
+  document.querySelectorAll('[data-app-code]').forEach(card => {
+    card.addEventListener('click', () => openMenu('/applications/' + card.dataset.appCode));
+  });
+}
+
+async function renderApplicationDetail(sysCode) {
+  const code = encodeURIComponent(sysCode);
+  const res = await api('/api/applications/' + code + '/my-permissions');
+  if (res.code !== 0) { el('view').innerHTML = deniedCard(res); return; }
+
+  const data = res.data || {};
+  const permissions = data.permissions || [];
+  const rows = permissions.map(permission =>
+    '<li class="app-perm-item"><div><p>' + escapeHtml(permission.description) + '</p>' +
+    '<code>' + escapeHtml(permission.permCode) + '</code></div>' +
+    '<span class="tag plain app-action">' + escapeHtml(permission.actionName) + '</span></li>'
+  ).join('');
+
+  el('view').innerHTML =
+    pageHeadAction(data.sysName || sysCode, '以下权限已按角色权限与直接授权合并，并转换为可读描述。',
+      '<button class="btn" id="appBack">返回应用列表</button>') +
+    '<div class="panel"><div class="panel-h"><h2>我的权限</h2><span class="hint">共 ' +
+      permissions.length + ' 项</span></div>' +
+    '<div class="panel-b flush"><ul class="app-perm-list">' +
+      (rows || '<li class="empty">当前账号在该系统中暂无业务权限</li>') +
+    '</ul></div></div>';
+
+  el('appBack').addEventListener('click', () => openMenu('/applications'));
 }
 
 /* ---------------- 财务报表 ---------------- */

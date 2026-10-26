@@ -23,6 +23,7 @@ public interface UserMapper {
         private Integer status;
         private Long departmentId;
         private String departmentName;
+        private String departmentPath;
         private LocalDateTime createdAt;
         private String roleNames;
         private Integer permCount;
@@ -43,6 +44,8 @@ public interface UserMapper {
         public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
         public String getDepartmentName() { return departmentName; }
         public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
+        public String getDepartmentPath() { return departmentPath; }
+        public void setDepartmentPath(String departmentPath) { this.departmentPath = departmentPath; }
         public LocalDateTime getCreatedAt() { return createdAt; }
         public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
         public String getRoleNames() { return roleNames; }
@@ -52,8 +55,20 @@ public interface UserMapper {
     }
 
     String BASE = """
+            WITH RECURSIVE dept_path AS (
+                SELECT id, parent_id, name,
+                       CAST(name AS CHAR(1000)) AS department_path
+                FROM sys_department
+                WHERE parent_id IS NULL
+                UNION ALL
+                SELECT d.id, d.parent_id, d.name,
+                       CONCAT(dp.department_path, ' / ', d.name)
+                FROM sys_department d
+                JOIN dept_path dp ON d.parent_id = dp.id
+            )
             SELECT u.id, u.account, u.name, u.phone, u.password_hash, u.status,
-                   u.department_id, d.name AS department_name, u.created_at,
+                   u.department_id, d.name AS department_name,
+                   dp.department_path, u.created_at,
                    (SELECT GROUP_CONCAT(r.name ORDER BY r.id SEPARATOR ' / ')
                       FROM sys_user_role ur JOIN sys_role r ON r.id = ur.role_id
                      WHERE ur.user_id = u.id) AS role_names,
@@ -64,6 +79,7 @@ public interface UserMapper {
                      WHERE ur.user_id = u.id) AS perm_count
             FROM sys_user u
             LEFT JOIN sys_department d ON d.id = u.department_id
+            LEFT JOIN dept_path dp ON dp.id = u.department_id
             """;
 
     @Select(BASE + " WHERE u.account = #{account}")
@@ -92,8 +108,14 @@ public interface UserMapper {
             """)
     int insert(UserRow row);
 
-    @Update("UPDATE sys_user SET name = #{name}, phone = #{phone} WHERE id = #{id}")
-    int update(@Param("id") long id, @Param("name") String name, @Param("phone") String phone);
+    @Update("""
+            UPDATE sys_user
+               SET name = #{name}, phone = #{phone},
+                   department_id = COALESCE(#{departmentId}, department_id)
+             WHERE id = #{id}
+            """)
+    int update(@Param("id") long id, @Param("name") String name,
+               @Param("phone") String phone, @Param("departmentId") Long departmentId);
 
     @Update("UPDATE sys_user SET status = #{status} WHERE id = #{id}")
     int updateStatus(@Param("id") long id, @Param("status") int status);
@@ -119,6 +141,9 @@ public interface UserMapper {
 
     @Insert("INSERT INTO sys_user_role (user_id, role_id) VALUES (#{userId}, #{roleId})")
     int addRole(@Param("userId") long userId, @Param("roleId") long roleId);
+
+    @Delete("DELETE FROM sys_user_role WHERE user_id = #{userId} AND role_id = #{roleId}")
+    int removeRole(@Param("userId") long userId, @Param("roleId") long roleId);
 
     @Select("SELECT COUNT(*) FROM sys_user_role WHERE user_id = #{userId} AND role_id = #{roleId}")
     long countRole(@Param("userId") long userId, @Param("roleId") long roleId);

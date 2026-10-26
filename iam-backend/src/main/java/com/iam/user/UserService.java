@@ -3,6 +3,8 @@ package com.iam.user;
 import com.iam.common.BizException;
 import com.iam.common.SessionContext;
 import com.iam.common.SessionMapper;
+import com.iam.audit.AuditService;
+import com.iam.department.DepartmentMapper;
 import com.iam.role.RoleMapper;
 import com.iam.permission.PermissionMapper;
 import org.slf4j.Logger;
@@ -25,18 +27,23 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final RoleMapper roleMapper;
     private final PermissionMapper permissionMapper;
+    private final DepartmentMapper departmentMapper;
+    private final AuditService auditService;
 
     @Value("${iam.password.initial:123456}")
     private String initialPassword;
 
     public UserService(UserMapper userMapper, SessionMapper sessionMapper,
                        PasswordEncoder passwordEncoder, RoleMapper roleMapper,
-                       PermissionMapper permissionMapper) {
+                       PermissionMapper permissionMapper, DepartmentMapper departmentMapper,
+                       AuditService auditService) {
         this.userMapper = userMapper;
         this.sessionMapper = sessionMapper;
         this.passwordEncoder = passwordEncoder;
         this.roleMapper = roleMapper;
         this.permissionMapper = permissionMapper;
+        this.departmentMapper = departmentMapper;
+        this.auditService = auditService;
     }
 
     public Map<String, Object> page(String keyword, int page, int size) {
@@ -77,10 +84,16 @@ public class UserService {
         return detail(userMapper.findByAccount(account).getId());
     }
 
-    public Map<String, Object> update(long id, String name, String phone) {
+    @Transactional
+    public Map<String, Object> update(long id, String name, String phone, Long departmentId) {
         if (userMapper.findById(id) == null) { throw new BizException(404, "用户不存在"); }
         if (name == null || name.isBlank()) { throw new BizException(400, "姓名不能为空"); }
-        userMapper.update(id, name.trim(), emptyToNull(phone));
+        if (departmentId != null && departmentMapper.countById(departmentId) == 0) {
+            throw new IllegalArgumentException("所属部门不存在，请核实");
+        }
+        userMapper.update(id, name.trim(), emptyToNull(phone), departmentId);
+        log.info("AUDIT user-update operator={} target={} departmentId={}",
+                SessionContext.userId(), id, departmentId);
         return detail(id);
     }
 
@@ -106,20 +119,43 @@ public class UserService {
     }
 
     @Transactional
-    public void assignRoles(long userId, List<Long> roleIds) {
+    public void assignRoles(long userId, List<Long> roleIds, long operatorId) {
         if (userMapper.findById(userId) == null) { throw new BizException(404, "用户不存在"); }
-        List<Long> ids = roleIds == null ? List.of() : roleIds;
+        List<Long> ids = roleIds == null ? List.of() : roleIds.stream()
+                .filter(Objects::nonNull).distinct().toList();
         for (Long rid : ids) {
             if (rid != null && roleMapper.countById(rid) == 0) {
                 throw new IllegalArgumentException("角色不存在：" + rid);
             }
+        }
+        List<String> roleNames = new ArrayList<>();
+        for (Long rid : ids) {
+            Map<String, Object> role = roleMapper.findById(rid);
+            roleNames.add(role == null ? "#" + rid : String.valueOf(role.get("name")));
         }
         userMapper.clearRoles(userId);
         for (Long rid : ids) {
             if (rid != null) { userMapper.addRole(userId, rid); }
         }
         sessionMapper.revokeByUser(userId);
-        log.info("AUDIT role-assign operator={} target={} roleIds={}", SessionContext.userId(), userId, ids);
+        auditService.record(operatorId, "ROLE_ASSIGN", userId,
+                "roles=" + roleNames + ", roleIds=" + ids);
+        log.info("AUDIT role-assign operator={} target={} roleIds={}", operatorId, userId, ids);
+    }
+
+    @Transactional
+    public void revokeRole(long userId, long roleId, long operatorId) {
+        if (userMapper.findById(userId) == null) { throw new BizException(404, "用户不存在"); }
+        Map<String, Object> role = roleMapper.findById(roleId);
+        if (role == null) { throw new BizException(404, "角色不存在"); }
+        if (userMapper.countRole(userId, roleId) == 0) {
+            throw new BizException(404, "该用户未分配此角色");
+        }
+        userMapper.removeRole(userId, roleId);
+        sessionMapper.revokeByUser(userId);
+        auditService.record(operatorId, "ROLE_REMOVE", userId,
+                "role=" + role.get("name") + ", roleId=" + roleId);
+        log.info("AUDIT role-remove operator={} target={} roleId={}", operatorId, userId, roleId);
     }
 
     /** 用户角色勾选列表；用户不存在时返回 404，而不是全 false */
@@ -182,6 +218,7 @@ public class UserService {
         m.put("status", u.getStatus());
         m.put("departmentId", u.getDepartmentId());
         m.put("department", u.getDepartmentName() == null ? "—" : u.getDepartmentName());
+        m.put("departmentPath", u.getDepartmentPath());
         m.put("roleNames", u.getRoleNames() == null ? "—" : u.getRoleNames());
         m.put("permCount", u.getPermCount() == null ? 0 : u.getPermCount());
         m.put("createdAt", u.getCreatedAt() == null ? null : u.getCreatedAt().toString().replace('T', ' '));

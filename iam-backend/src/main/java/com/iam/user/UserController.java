@@ -20,7 +20,7 @@ public class UserController {
     }
 
     public record CreateReq(String account, String name, String phone) {}
-    public record UpdateReq(String name, String phone) {}
+    public record UpdateReq(String name, String phone, Long departmentId) {}
     public record StatusReq(Integer status) {}
     public record RolesReq(List<Long> roleIds) {}
     public record DirectPermsReq(List<Long> permissionIds) {}
@@ -48,11 +48,11 @@ public class UserController {
         return Result.ok(userService.create(req.account(), req.name(), req.phone()));
     }
 
-    @Operation(summary = "修改用户", description = "只允许改姓名与手机号")
+    @Operation(summary = "修改用户", description = "可修改姓名、手机号与所属部门；部门 ID 必须真实存在")
     @PutMapping("/{id}")
     @RequirePerm("USER:EDIT")
     public Result update(@PathVariable long id, @RequestBody UpdateReq req) {
-        return Result.ok(userService.update(id, req.name(), req.phone()));
+        return Result.ok(userService.update(id, req.name(), req.phone(), req.departmentId()));
     }
 
     @Operation(summary = "启用 / 停用", description = "停用会立即撤销该用户全部会话，且不能停用自己")
@@ -86,11 +86,27 @@ public class UserController {
         return Result.ok(userService.rolesOf(id));
     }
 
-    @Operation(summary = "分配角色", description = "覆盖式保存；保存后该用户会话失效")
-    @PutMapping("/{id}/roles")
-    @RequirePerm("USER:ASSIGN_ROLE")
+    @Operation(summary = "分配角色", description = "覆盖式保存；仅 ROLE:ASSIGN 可调用")
+    @PostMapping("/{id}/roles")
+    @RequirePerm("ROLE:ASSIGN")
     public Result assignRoles(@PathVariable long id, @RequestBody RolesReq req) {
-        userService.assignRoles(id, req.roleIds());
+        userService.assignRoles(id, req.roleIds(), SessionContext.userId());
+        return Result.ok();
+    }
+
+    @Operation(summary = "分配角色（兼容旧调用）", description = "覆盖式保存；仅 ROLE:ASSIGN 可调用")
+    @PutMapping("/{id}/roles")
+    @RequirePerm("ROLE:ASSIGN")
+    public Result replaceRoles(@PathVariable long id, @RequestBody RolesReq req) {
+        userService.assignRoles(id, req.roleIds(), SessionContext.userId());
+        return Result.ok();
+    }
+
+    @Operation(summary = "剥夺单个角色", description = "仅 ROLE:ASSIGN 可调用；成功后踢会话并写审计")
+    @DeleteMapping("/{id}/roles/{roleId}")
+    @RequirePerm("ROLE:ASSIGN")
+    public Result removeRole(@PathVariable long id, @PathVariable long roleId) {
+        userService.revokeRole(id, roleId, SessionContext.userId());
         return Result.ok();
     }
 

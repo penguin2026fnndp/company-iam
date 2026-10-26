@@ -2,6 +2,7 @@ package com.iam.apply;
 
 import com.iam.common.BizException;
 import com.iam.common.SessionMapper;
+import com.iam.audit.AuditService;
 import com.iam.permission.PermissionMapper;
 import com.iam.role.RoleMapper;
 import com.iam.user.UserMapper;
@@ -21,14 +22,17 @@ public class ApplyService {
     private final RoleMapper roleMapper;
     private final PermissionMapper permissionMapper;
     private final SessionMapper sessionMapper;
+    private final AuditService auditService;
 
     public ApplyService(ApplyMapper applyMapper, UserMapper userMapper, RoleMapper roleMapper,
-                        PermissionMapper permissionMapper, SessionMapper sessionMapper) {
+                        PermissionMapper permissionMapper, SessionMapper sessionMapper,
+                        AuditService auditService) {
         this.applyMapper = applyMapper;
         this.userMapper = userMapper;
         this.roleMapper = roleMapper;
         this.permissionMapper = permissionMapper;
         this.sessionMapper = sessionMapper;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -41,7 +45,9 @@ public class ApplyService {
         if (reason == null || reason.trim().length() < 4) { throw new IllegalArgumentException("申请理由至少 4 个字"); }
 
         if (type.equals("ROLE")) {
-            if (roleMapper.findById(targetId) == null) { throw new IllegalArgumentException("角色不存在：" + targetId); }
+            if (roleMapper.findById(targetId) == null) {
+                throw new IllegalArgumentException("申请的角色编号不存在，请核实");
+            }
             if (userMapper.countRole(applicantId, targetId) > 0) { throw new BizException(409, "已拥有该角色，无需申请"); }
         } else {
             PermissionMapper.PermRow perm = permissionMapper.findById(targetId);
@@ -122,6 +128,11 @@ public class ApplyService {
 
         int status = approve ? 1 : 2;
         applyMapper.decide(id, status, approverId, comment);
+        auditService.record(approverId, "APPLY_DECIDE", row.getApplicantId(),
+                "applyId=" + id + ", targetType=" + row.getTargetType()
+                        + ", targetId=" + row.getTargetId()
+                        + ", result=" + (approve ? "APPROVED" : "REJECTED")
+                        + ", comment=" + (comment == null ? "" : comment));
         log.info("AUDIT apply-decide operator={} applyId={} result={} target={}:{}",
                 approverId, id, approve ? "APPROVED" : "REJECTED", row.getTargetType(), row.getTargetId());
         return view(applyMapper.findById(id));

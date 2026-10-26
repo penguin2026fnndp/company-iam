@@ -53,6 +53,19 @@ public class AuthInterceptor implements HandlerInterceptor {
                 write(response, 403, data, "缺少权限 " + required.value());
                 return false;
             }
+            AnyPerm anyPerm = method.getMethodAnnotation(AnyPerm.class);
+            if (anyPerm == null) { anyPerm = method.getBeanType().getAnnotation(AnyPerm.class); }
+            if (anyPerm != null) {
+                String matched = java.util.Arrays.stream(anyPerm.value())
+                        .filter(perms::contains).findFirst().orElse(null);
+                if (matched == null) {
+                    String requiredText = String.join(" 或 ", anyPerm.value());
+                    Map<String, Object> data = new LinkedHashMap<>();
+                    data.put("requiredPerm", requiredText);
+                    write(response, 403, data, "缺少权限 " + requiredText);
+                    return false;
+                }
+            }
             return true;
         } catch (BizException e) {
             write(response, e.getCode(), null, e.getMessage());

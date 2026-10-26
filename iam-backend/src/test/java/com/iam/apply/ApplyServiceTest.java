@@ -2,6 +2,7 @@ package com.iam.apply;
 
 import com.iam.common.BizException;
 import com.iam.common.SessionMapper;
+import com.iam.audit.AuditService;
 import com.iam.permission.PermissionMapper;
 import com.iam.role.RoleMapper;
 import com.iam.user.UserMapper;
@@ -28,12 +29,14 @@ class ApplyServiceTest {
     @Mock private RoleMapper roleMapper;
     @Mock private PermissionMapper permissionMapper;
     @Mock private SessionMapper sessionMapper;
+    @Mock private AuditService auditService;
 
     private ApplyService service;
 
     @BeforeEach
     void setUp() {
-        service = new ApplyService(applyMapper, userMapper, roleMapper, permissionMapper, sessionMapper);
+        service = new ApplyService(applyMapper, userMapper, roleMapper, permissionMapper,
+                sessionMapper, auditService);
     }
 
     private ApplyMapper.ApplyRow pending(long applicantId, String type, long targetId) {
@@ -49,12 +52,24 @@ class ApplyServiceTest {
     }
 
     @Test
+    @DisplayName("申请不存在的角色编号 → 400 业务异常")
+    void rejectsUnknownRoleTarget() {
+        when(roleMapper.findById(9999L)).thenReturn(null);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.submit(7L, "ROLE", 9999L, "需要角色权限"));
+
+        assertEquals("申请的角色编号不存在，请核实", ex.getMessage());
+        verify(applyMapper, never()).insert(any());
+    }
+
+    @Test
     @DisplayName("跨部门审批 → 403，且不写入授权")
     void rejectsCrossDepartmentDecision() {
         when(applyMapper.findById(1L)).thenReturn(pending(3L, "PERM", 16L));
         when(applyMapper.isAdmin(2L)).thenReturn(0L);
-        when(applyMapper.managedDepartmentOf(2L)).thenReturn(1L);   // 张伟：技术部
-        when(applyMapper.departmentOfUser(3L)).thenReturn(2L);      // 李四：财务部（模拟不匹配）
+        when(applyMapper.managedDepartmentOf(2L)).thenReturn(14L);  // 道路工程分公司-综合办公室
+        when(applyMapper.departmentOfUser(3L)).thenReturn(20L);     // 其他部门（模拟不匹配）
 
         BizException ex = assertThrows(BizException.class,
                 () -> service.decide(1L, "APPROVE", "同意", 2L));
@@ -80,6 +95,7 @@ class ApplyServiceTest {
         verify(permissionMapper).addDirect(3L, 16L, 1L);
         verify(sessionMapper).revokeByUser(3L);
         verify(applyMapper).decide(1L, 1, 2L, "同意");
+        verify(auditService).record(eq(2L), eq("APPLY_DECIDE"), eq(3L), contains("APPROVED"));
     }
 
     @Test
